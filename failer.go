@@ -20,27 +20,27 @@ type Tester interface {
 type tester struct {
 	t        *testing.T
 	negative bool
-	failed   bool
+	failed   int
 }
 
 // FailNow in case of a negative test is not allowed to be called.
 func (t *tester) FailNow() {
 	if t.negative {
-		t.failed = true
+		t.failed++
 	} else {
 		t.t.FailNow()
 	}
 }
 
 // Failed returns true if the given failed.
-func Failed(t Tester) bool {
+func Failed(t Tester, count int) bool {
 	tt, ok := t.(*testing.T)
 	if ok {
 		return tt.Failed()
 	}
 	failed := t.(*tester).failed
-	t.(*tester).failed = false
-	return failed
+	t.(*tester).failed = 0
+	return failed == count
 }
 
 // MkPosNeg creates a positive and a negative tester.

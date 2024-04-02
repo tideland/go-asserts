@@ -7,6 +7,7 @@
 package asserts_test
 
 import (
+	"errors"
 	"testing"
 
 	"tideland.dev/go/asserts"
@@ -17,30 +18,61 @@ func TestLogf(t *testing.T) {
 	asserts.Logf("Hello, %s!", "World")
 }
 
-// TestTrueFalse tests the True and False assertions.
-func TestTrueFalse(t *testing.T) {
-	pt, nt := asserts.MkPosNeg(t)
+// TestBooleans tests the True and False assertions.
+func TestBooleans(t *testing.T) {
+	pos, neg := asserts.MkPosNeg(t)
 
-	asserts.True(pt, true)
-	asserts.True(nt, false)
-	asserts.True(pt, asserts.Failed(nt))
+	asserts.True(pos, true)
+	asserts.True(neg, false)
+	asserts.False(pos, false)
+	asserts.False(neg, true)
 
-	asserts.False(pt, false)
-	asserts.False(nt, true)
-	asserts.True(pt, asserts.Failed(nt))
+	asserts.True(pos, asserts.Failed(neg, 2))
 }
 
-// TestNilNotNil tests the Nil and NotNil assertions.
-func TestNilNotNil(t *testing.T) {
-	pt, nt := asserts.MkPosNeg(t)
+// TestNils tests the Nil and NotNil assertions.
+func TestNils(t *testing.T) {
+	pos, neg := asserts.MkPosNeg(t)
 
-	asserts.Nil(pt, nil)
-	asserts.Nil(nt, "not nil")
-	asserts.True(pt, asserts.Failed(nt))
+	asserts.Nil(pos, nil)
+	asserts.Nil(neg, "not nil")
+	asserts.NotNil(pos, "not nil")
+	asserts.NotNil(neg, nil)
 
-	asserts.NotNil(pt, "not nil")
-	asserts.NotNil(nt, nil)
-	asserts.True(pt, asserts.Failed(nt))
+	asserts.True(pos, asserts.Failed(neg, 2))
+}
+
+// TestComparisons tests the Equal and Different assertions.
+func TestComparisons(t *testing.T) {
+	pos, neg := asserts.MkPosNeg(t)
+
+	asserts.Equal(pos, 42, 42)
+	asserts.Equal(neg, 42, 43)
+	asserts.Equal(pos, "foo", "foo")
+	asserts.Equal(neg, "foo", "bar")
+
+	asserts.Different(pos, 42, 43)
+	asserts.Different(neg, 42, 42)
+	asserts.Different(pos, "foo", "bar")
+	asserts.Different(neg, "foo", "foo")
+
+	asserts.True(pos, asserts.Failed(neg, 4))
+}
+
+// TestErrors tests the Error assertions.
+func TestErrors(t *testing.T) {
+	pos, neg := asserts.MkPosNeg(t)
+
+	testErr := errors.New("booom")
+
+	asserts.Error(pos, testErr)
+	asserts.Error(neg, nil)
+	asserts.NoError(pos, nil)
+	asserts.NoError(neg, testErr)
+	asserts.IsError(pos, testErr, testErr)
+	asserts.IsError(neg, testErr, errors.New("ouch"))
+
+	asserts.True(pos, asserts.Failed(neg, 3))
 }
 
 // -----------------------------------------------------------------------------
