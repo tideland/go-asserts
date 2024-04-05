@@ -15,7 +15,7 @@ import (
 
 // TestLogf tests the log function.
 func TestLogf(t *testing.T) {
-	asserts.Logf("Hello, %s!", "World")
+	asserts.Logf(t, "Hello, %s!", "World")
 }
 
 // TestBooleans tests the True and False assertions.
@@ -56,7 +56,10 @@ func TestComparisons(t *testing.T) {
 	asserts.Different(pos, "foo", "bar")
 	asserts.Different(neg, "foo", "foo")
 
-	asserts.True(pos, asserts.Failed(neg, 4))
+	asserts.AboutEqual(pos, 45, 43, 5)
+	asserts.AboutEqual(neg, 4.5, 4.3, 0.1)
+
+	asserts.True(pos, asserts.Failed(neg, 5))
 }
 
 // TestErrors tests the Error assertions.

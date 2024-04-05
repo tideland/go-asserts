@@ -11,8 +11,10 @@ import (
 	"testing"
 )
 
-// Tester surrounds the testing.T to provide a more convinient way of testing.
+// Tester defines the expected functions of any testing and logging type
+// needed.
 type Tester interface {
+	Logf(format string, args ...any)
 	FailNow()
 }
 
@@ -21,6 +23,11 @@ type tester struct {
 	t        *testing.T
 	negative bool
 	failed   int
+}
+
+// Logf is used to print additional information during testing.
+func (t *tester) Logf(format string, args ...any) {
+	logf(format, args...)
 }
 
 // FailNow in case of a negative test is not allowed to be called.

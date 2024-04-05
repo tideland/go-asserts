@@ -6,11 +6,21 @@
 
 package asserts // import "tideland.dev/go/assert"
 
-import "errors" // Logf prints a log message with the given information on stdout.
+import (
+	"errors"
+
+	"golang.org/x/exp/constraints"
+)
+
 // It's used to print additional information during testing.
 // The location and function name are added automatically.
-func Logf(format string, args ...interface{}) {
+func Logf(t Tester, format string, args ...interface{}) {
 	logf(format, args...)
+}
+
+// Failf is used to fail a test with a formatted message.
+func Failf(t Tester, format string, args ...interface{}) {
+	failf(t, "fail", format, args...)
 }
 
 // True checks if the given condition is true.
@@ -57,6 +67,13 @@ func Different[T comparable](t Tester, expected, actual T) {
 	}
 }
 
+// AboutEqual checks if the given values are equal within a delta.
+func AboutEqual[T constraints.Integer | constraints.Float](t Tester, expected, actual T, delta T) {
+	if expected < actual-delta || expected > actual+delta {
+		failf(t, "about equal", "expected is '%v' +/- '%v', actual is '%v'", expected, delta, actual)
+	}
+}
+
 // Error checks if the given error is not nil.
 func Error(t Tester, err error) {
 	if err == nil {
@@ -68,7 +85,7 @@ func Error(t Tester, err error) {
 // It's the opposite of Error.
 func NoError(t Tester, err error) {
 	if err != nil {
-		failf(t, "no error", "error is %v", err)
+		failf(t, "no error", "expected no error, got '%v'", err)
 	}
 }
 

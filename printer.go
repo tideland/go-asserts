@@ -7,46 +7,51 @@
 package asserts // import "tideland.dev/go/asserts"
 
 import (
-	"bufio"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"runtime"
 	"strings"
+	"sync"
 )
+
+// setup initializes the asserts package only one time.
+func setup() {
+	var once sync.Once
+	onceBody := func() {
+		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}))
+		slog.SetDefault(logger)
+	}
+	// Run the setup only once.
+	done := make(chan struct{})
+	go func() {
+		once.Do(onceBody)
+		close(done)
+	}()
+	<-done
+}
 
 // logf prints a log message with the given information on stdout.
 func logf(format string, args ...any) {
-	w := bufio.NewWriter(os.Stdout)
-	defer w.Flush()
-
-	// Retrieve location and function with standard offset.
+	setup()
 	location, fun := here(4)
 
-	// Prefix log with location and function.
-	w.WriteString(fmt.Sprintf("[LOG] %s log in %s() ", location, fun))
-	w.WriteString(fmt.Sprintf(format, args...))
-	w.WriteString("\n")
+	slog.Info("asserts log", "location", location, "function", fun, "message", fmt.Sprintf(format, args...))
 }
 
 // failf prints a fail message with the given information on stderr.
 func failf(t Tester, assertion string, format string, args ...any) {
-	w := bufio.NewWriter(os.Stderr)
-	defer w.Flush()
-
-	// Retrieve location and function with standard offset.
+	setup()
 	location, fun := here(4)
 
-	// Prefix with location and function.
 	if assertion == "" {
-		w.WriteString(fmt.Sprintf("[ERR] %s assert in %s() failed {", location, fun))
+		slog.Error("asserts fail", "location", location, "function", fun, "message", fmt.Sprintf(format, args...))
 	} else {
-		w.WriteString(fmt.Sprintf("[ERR] %s assert '%s' in %s() failed {", location, assertion, fun))
+		slog.Error("asserts fail", "location", location, "function", fun, "assertion", assertion, "message", fmt.Sprintf(format, args...))
 	}
-
-	// Add the given information.
-	w.WriteString(fmt.Sprintf(format, args...))
-	w.WriteString("}\n")
 
 	t.FailNow()
 }
