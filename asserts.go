@@ -75,6 +75,13 @@ func AboutEqual[T constraints.Integer | constraints.Float](t Tester, expected, a
 	}
 }
 
+// Range checks if the given value is within lower and upper bounds.
+func Range[T constraints.Integer | constraints.Float](t Tester, value, lower, upper T) {
+	if value < lower || value > upper {
+		failf(t, "range", "value is '%v', not in range '%v' to '%v'", value, lower, upper)
+	}
+}
+
 // Error checks if the given error is not nil.
 func Error(t Tester, err error) {
 	if err == nil {

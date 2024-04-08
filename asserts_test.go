@@ -74,11 +74,10 @@ func TestErrors(t *testing.T) {
 	asserts.NoError(neg, testErr)
 	asserts.IsError(pos, testErr, testErr)
 	asserts.IsError(neg, testErr, errors.New("ouch"))
-
-	asserts.True(pos, asserts.Failed(neg, 3))
-
 	asserts.ErrorContains(pos, testErr, "ooo")
-	asserts.ErrorContains(neg, testErr, "booom")
+	asserts.ErrorContains(neg, testErr, "BOOOM")
+
+	asserts.True(pos, asserts.Failed(neg, 4))
 }
 
 // -----------------------------------------------------------------------------
