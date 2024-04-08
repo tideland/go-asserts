@@ -8,6 +8,7 @@ package asserts // import "tideland.dev/go/assert"
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 
 	"golang.org/x/exp/constraints"
@@ -105,14 +106,25 @@ func IsError(t Tester, expected, actual error) {
 	}
 }
 
-// ErrorContains checks if the given error is not nil and contains the expected substring.
-// It uses the errors.Is() function.
+// ErrorContains checks if the given error is not nil and its message
+// contains the expected substring.
 func ErrorContains(t Tester, err error, contains string) {
 	if err == nil {
 		failf(t, "error contains", "error is nil")
 	}
 	if !strings.Contains(err.Error(), contains) {
 		failf(t, "error contains", "error does not contain '%s'", contains)
+	}
+}
+
+// ErrorMatches checks if the given error is not nil and its message
+// matches the expected regular expression.
+func ErrorMatches(t Tester, err error, pattern string) {
+	if err == nil {
+		failf(t, "error matches", "error is nil")
+	}
+	if !regexp.MustCompile(pattern).MatchString(err.Error()) {
+		failf(t, "error matches", "error does not match '%s'", pattern)
 	}
 }
 
