@@ -17,7 +17,7 @@ import (
 // It's used to print additional information during testing.
 // The location and function name are added automatically.
 func Logf(t Tester, format string, args ...interface{}) {
-	logf(format, args...)
+	logf(t, format, args...)
 }
 
 // Failf is used to fail a test with a formatted message.
@@ -69,17 +69,33 @@ func Different[T comparable](t Tester, expected, actual T) {
 	}
 }
 
-// AboutEqual checks if the given values are equal within a delta.
-func AboutEqual[T constraints.Integer | constraints.Float](t Tester, expected, actual T, delta T) {
+// AboutEqual checks if the given values are equal within a delta. Possible
+// values are integers, floats, and time.Duration.
+func AboutEqual[T constraints.Integer | constraints.Float](t Tester, expected, actual, delta T) {
 	if expected < actual-delta || expected > actual+delta {
 		failf(t, "about equal", "expected is '%v' +/- '%v', actual is '%v'", expected, delta, actual)
 	}
 }
 
-// Range checks if the given value is within lower and upper bounds.
-func Range[T constraints.Integer | constraints.Float](t Tester, value, lower, upper T) {
-	if value < lower || value > upper {
-		failf(t, "range", "value is '%v', not in range '%v' to '%v'", value, lower, upper)
+// InRange checks if the given value is within lower and upper bounds. Possible
+// values are integers, floats, and time.Duration.
+func InRange[T constraints.Integer | constraints.Float](t Tester, expected, lower, upper T) {
+	if lower > upper {
+		lower, upper = upper, lower
+	}
+	if expected <= lower || expected >= upper {
+		failf(t, "range", "value is '%v', not in range '%v' to '%v'", expected, lower, upper)
+	}
+}
+
+// OutOfRange checks if the given value is outside lower and upper bounds. It's the
+// opposite of InRange.
+func OutOfRange[T constraints.Integer | constraints.Float](t Tester, expected, lower, upper T) {
+	if lower > upper {
+		lower, upper = upper, lower
+	}
+	if expected >= lower && expected <= upper {
+		failf(t, "out of range", "value is '%v', not out of range '%v' to '%v'", expected, lower, upper)
 	}
 }
 

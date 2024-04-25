@@ -9,6 +9,7 @@ package asserts_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"tideland.dev/go/asserts"
 )
@@ -62,6 +63,28 @@ func TestComparisons(t *testing.T) {
 	asserts.True(pos, asserts.Failed(neg, 5))
 }
 
+// TestRange tests the Ranges assertions.
+func TestRange(t *testing.T) {
+	pos, neg := asserts.MkPosNeg(t)
+
+	asserts.InRange(pos, 42, 40, 45)
+	asserts.InRange(neg, 42, 45, 50)
+	asserts.OutOfRange(pos, 42, 45, 50)
+	asserts.OutOfRange(neg, 42, 40, 45)
+
+	asserts.InRange(pos, 4.2, 4, 4.5)
+	asserts.InRange(neg, 4.2, 4.5, 5)
+	asserts.OutOfRange(pos, 4.2, 4.5, 5)
+	asserts.OutOfRange(neg, 4.2, 4, 4.5)
+
+	asserts.InRange(pos, 2*time.Second, time.Second, 3*time.Second)
+	asserts.InRange(neg, 2*time.Second, 3*time.Second, 4*time.Second)
+	asserts.OutOfRange(pos, 2*time.Second, 3*time.Second, 4*time.Second)
+	asserts.OutOfRange(neg, 2*time.Second, time.Second, 3*time.Second)
+
+	asserts.True(pos, asserts.Failed(neg, 6))
+}
+
 // TestErrors tests the Error assertions.
 func TestErrors(t *testing.T) {
 	pos, neg := asserts.MkPosNeg(t)
@@ -80,6 +103,35 @@ func TestErrors(t *testing.T) {
 	asserts.ErrorMatches(neg, testErr, ".*ou$")
 
 	asserts.True(pos, asserts.Failed(neg, 5))
+}
+
+// TestRun tests the Run function.
+func TestRun(t *testing.T) {
+	pos, neg := asserts.MkPosNeg(t)
+	subtests := []struct {
+		name     string
+		negative bool
+		expected any
+		actual   any
+	}{
+		{"int positive", false, 42, 42},
+		{"float positive", true, 4.2, 4.2},
+		{"string positive", false, "foo", "foo"},
+		{"int negative", true, 42, 43},
+		{"float negative", true, 4.2, 4.3},
+		{"string negative", true, "foo", "bar"},
+	}
+
+	for _, test := range subtests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			if test.negative {
+				asserts.Different(neg, test.expected, test.actual)
+			} else {
+				asserts.Equal(pos, test.expected, test.actual)
+			}
+		})
+	}
 }
 
 // -----------------------------------------------------------------------------

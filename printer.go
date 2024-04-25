@@ -8,52 +8,26 @@ package asserts // import "tideland.dev/go/asserts"
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 	"path"
 	"runtime"
 	"strings"
-	"sync"
 )
 
-// setup initializes the asserts package only one time.
-func setup() {
-	var once sync.Once
-	onceBody := func() {
-		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		}))
-		slog.SetDefault(logger)
-	}
-	// Run the setup only once.
-	done := make(chan struct{})
-	go func() {
-		once.Do(onceBody)
-		close(done)
-	}()
-	<-done
-}
-
 // logf prints a log message with the given information on stdout.
-func logf(format string, args ...any) {
-	setup()
-	location, fun := here(4)
+func logf(t Tester, format string, args ...any) {
+	location, fun := here(3)
+	format = fmt.Sprintf("%s assertion log at %s(): %s\n", location, fun, format)
 
-	slog.Info("asserts log", "location", location, "function", fun, "message", fmt.Sprintf(format, args...))
+	t.Logf(format, args...)
 }
 
 // failf prints a fail message with the given information on stderr.
 func failf(t Tester, assertion string, format string, args ...any) {
-	setup()
 	location, fun := here(4)
+	format = fmt.Sprintf("%s assertion '%s' fail at %s(): %s\n", location, assertion, fun, format)
 
-	if assertion == "" {
-		slog.Error("asserts fail", "location", location, "function", fun, "message", fmt.Sprintf(format, args...))
-	} else {
-		slog.Error("asserts fail", "location", location, "function", fun, "assertion", assertion, "message", fmt.Sprintf(format, args...))
-	}
-
-	t.FailNow()
+	t.Errorf(format, args...)
+	t.Fail()
 }
 
 // here returns the filename and position based on a given offset.

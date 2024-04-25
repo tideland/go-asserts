@@ -8,6 +8,8 @@
 package asserts // import "tideland.dev/go/asserts"
 
 import (
+	"fmt"
+	"os"
 	"testing"
 )
 
@@ -15,7 +17,8 @@ import (
 // needed.
 type Tester interface {
 	Logf(format string, args ...any)
-	FailNow()
+	Errorf(format string, args ...any)
+	Fail()
 }
 
 // tester defines the expected functions of a testing.T but cares about failing.
@@ -26,16 +29,24 @@ type tester struct {
 }
 
 // Logf is used to print additional information during testing.
-func (t *tester) Logf(format string, args ...any) {
-	logf(format, args...)
+func (t tester) Logf(format string, args ...any) {
+	t.t.Logf(format, args...)
+	// fmt.Fprintf(os.Stderr, format, args...)
 }
 
-// FailNow in case of a negative test is not allowed to be called.
-func (t *tester) FailNow() {
+// Errorf is used to fail a test with a formatted message.
+func (t tester) Errorf(format string, args ...any) {
+	if !t.negative {
+		fmt.Fprintf(os.Stderr, format, args...)
+	}
+}
+
+// Fail is used to signal afailing test.
+func (t *tester) Fail() {
 	if t.negative {
 		t.failed++
 	} else {
-		t.t.FailNow()
+		t.t.Fail()
 	}
 }
 
@@ -47,6 +58,10 @@ func Failed(t Tester, count int) bool {
 	}
 	failed := t.(*tester).failed
 	t.(*tester).failed = 0
+	if failed != count {
+		t.Logf("failed: %d, expected: %d", failed, count)
+		t.Fail()
+	}
 	return failed == count
 }
 
