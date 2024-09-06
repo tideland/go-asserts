@@ -8,74 +8,87 @@
 package asserts // import "tideland.dev/go/asserts"
 
 import (
-	"fmt"
-	"os"
 	"testing"
 )
 
-// Tester defines the expected functions of any testing and logging type
-// needed.
+// Behavior is used to define the behavior for breaking a test.
+type Behavior bool
+
+const (
+	FAIL     Behavior = true
+	CONTINUE Behavior = false
+)
+
+// Tester is the interface for the testing.TB interface. It helps to count
+// failures without breaking the test.
 type Tester interface {
-	Logf(format string, args ...any)
-	Errorf(format string, args ...any)
-	Fail()
+	testing.TB
 }
 
-// tester defines the expected functions of a testing.T but cares about failing.
+// tester implements the Tester interface and overwrites the Fail and FailNow
+// methods to count the number of failures.
 type tester struct {
-	t        *testing.T
-	negative bool
-	failed   int
+	testing.TB
+	fail   bool
+	failed int
 }
 
-// Logf is used to print additional information during testing.
-func (t tester) Logf(format string, args ...any) {
-	t.t.Logf(format, args...)
-	// fmt.Fprintf(os.Stderr, format, args...)
-}
-
-// Errorf is used to fail a test with a formatted message.
-func (t tester) Errorf(format string, args ...any) {
-	if !t.negative {
-		fmt.Fprintf(os.Stderr, format, args...)
+// NewTester creates a new tester. The behavior defines if the test should
+// break on the first failure.
+func NewTester(tb testing.TB, behavior Behavior) Tester {
+	return &tester{
+		TB:   tb,
+		fail: bool(behavior),
 	}
 }
 
-// Fail is used to signal afailing test.
+// Error overwrites the testing.TB method to count the number of failures if
+// the behavior is set to CONTINUE. Otherwise it fails the test.
+func (t *tester) Error(args ...any) {
+	t.failed++
+	if t.fail {
+		t.TB.Error(args...)
+	}
+}
+
+// Errorf overwrites the testing.TB method to count the number of failures if
+// the behavior is set to CONTINUE. Otherwise it fails the test.
+func (t *tester) Errorf(format string, args ...any) {
+	t.failed++
+	if t.fail {
+		t.TB.Errorf(format, args...)
+	}
+}
+
+// Fail overwrites the testing.TB method to count the number of failures if
+// the behavior is set to CONTINUE. Otherwise it fails the test.
 func (t *tester) Fail() {
-	if t.negative {
-		t.failed++
-	} else {
-		t.t.Fail()
+	t.failed++
+	if t.fail {
+		t.TB.Fail()
 	}
 }
 
-// Failed returns true if the given failed.
-func Failed(t Tester, count int) bool {
-	tt, ok := t.(*testing.T)
-	if ok {
-		return tt.Failed()
+// FailNow overwrites the testing.TB method to count the number of failures if
+// the behavior is set to CONTINUE. Otherwise it fails the test.
+func (t *tester) FailNow() {
+	t.failed++
+	if t.fail {
+		t.TB.FailNow()
 	}
-	failed := t.(*tester).failed
-	t.(*tester).failed = 0
-	if failed != count {
-		t.Logf("failed: %d, expected: %d", failed, count)
+}
+
+// Failures checks the number of failures and fails the test if it is not
+// the expected one.
+func Failures(t Tester, expected int) {
+	tt, ok := t.(*tester)
+	if !ok {
 		t.Fail()
+		return
 	}
-	return failed == count
-}
-
-// MkPosNeg creates a positive and a negative tester.
-func MkPosNeg(t *testing.T) (Tester, Tester) {
-	pt := &tester{
-		t:        t,
-		negative: false,
+	if tt.failed != expected {
+		t.Errorf("expected %d failures, but got %d", expected, tt.failed)
 	}
-	nt := &tester{
-		t:        t,
-		negative: true,
-	}
-	return pt, nt
 }
 
 // -----------------------------------------------------------------------------

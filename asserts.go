@@ -10,6 +10,7 @@ import (
 	"errors"
 	"regexp"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/constraints"
 )
@@ -54,7 +55,7 @@ func NotNil(t Tester, value any) {
 }
 
 // Equal checks if the given values are equal.
-// It uses the == operator for comparable types.
+// It uses the == operator for comparable types and supports time.Duration.
 func Equal[T comparable](t Tester, expected, actual T) {
 	if expected != actual {
 		failf(t, "equal", "expected is '%v', actual is '%v'", expected, actual)
@@ -62,10 +63,26 @@ func Equal[T comparable](t Tester, expected, actual T) {
 }
 
 // Different checks if the given values are different.
-// It uses the != operator for comparable types and is the opposite of Equal.
+// It uses the != operator for comparable types and supports time.Duration.
 func Different[T comparable](t Tester, expected, actual T) {
 	if expected == actual {
 		failf(t, "different", "expected is '%v', actual is '%v'", expected, actual)
+	}
+}
+
+// Less checks if the actual value is less than the expected one.
+// Supports integers, floats, and time.Duration.
+func Less[T constraints.Integer | constraints.Float](t Tester, expected, actual T) {
+	if actual >= expected {
+		failf(t, "less", "actual '%v' is more than '%v'", actual, expected)
+	}
+}
+
+// More checks if the actual value is more than the expected one.
+// Supports integers, floats, and time.Duration.
+func More[T constraints.Integer | constraints.Float](t Tester, expected, actual T) {
+	if actual <= expected {
+		failf(t, "more", "actual '%v' is less than expected '%v'", actual, expected)
 	}
 }
 
@@ -74,6 +91,59 @@ func Different[T comparable](t Tester, expected, actual T) {
 func AboutEqual[T constraints.Integer | constraints.Float](t Tester, expected, actual, delta T) {
 	if expected < actual-delta || expected > actual+delta {
 		failf(t, "about equal", "expected is '%v' +/- '%v', actual is '%v'", expected, delta, actual)
+	}
+}
+
+// Before checks if the actual time is before the expected time.
+func Before(t Tester, expected, actual time.Time) {
+	if !actual.Before(expected) {
+		failf(t, "time before", "actual time '%v' is not before expected time '%v'", actual, expected)
+	}
+}
+
+// After checks if the actual time is after the expected time.
+func After(t Tester, expected, actual time.Time) {
+	if !actual.After(expected) {
+		failf(t, "time after", "actual time '%v' is not after expected time '%v'", actual, expected)
+	}
+}
+
+// Between checks if the actual time is between the expected start and end times.
+func Between(t Tester, start, end, actual time.Time) {
+	if actual.Before(start) || actual.After(end) {
+		failf(t, "time between", "actual time '%v' is not between start time '%v' and end time '%v'", actual, start, end)
+	}
+}
+
+// Duration calculates the duration of a function execution. If the function returns an error, 
+// the test fails. The returned duration can be used as expected duration in further tests.
+func Duration(t Tester, fn func() error) time.Duration {
+	start := time.Now()
+	err := fn()
+	if err != nil {
+		failf(t, "measure duration", "function returned an error: '%v'", err)
+	}
+	return time.Since(start)
+}
+
+// Shorter checks if the actual duration is shorter than the expected duration.
+func Shorter(t Tester, expected, actual time.Duration) {
+	if actual >= expected {
+		failf(t, "earlier", "actual duration '%v' is not shorter than expected duration '%v'", actual, expected)
+	}
+}
+
+// Longer checks if the actual duration is longer than the expected duration.
+func Longer(t Tester, expected, actual time.Duration) {
+	if actual <= expected {
+		failf(t, "later", "actual duration '%v' is not longer than expected duration '%v'", actual, expected)
+	}
+}
+
+// DurationAboutEqual checks if the given durations are equal within a delta.
+func DurationAboutEqual(t Tester, expected, actual, delta time.Duration) {
+	if expected < actual-delta || expected > actual+delta {
+		failf(t, "duration about equal", "expected duration is '%v' +/- '%v', actual duration is '%v'", expected, delta, actual)
 	}
 }
 

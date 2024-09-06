@@ -21,93 +21,151 @@ func TestLogf(t *testing.T) {
 
 // TestBooleans tests the True and False assertions.
 func TestBooleans(t *testing.T) {
-	pos, neg := asserts.MkPosNeg(t)
+	tester := asserts.NewTester(t, asserts.CONTINUE)
 
-	asserts.True(pos, true)
-	asserts.True(neg, false)
-	asserts.False(pos, false)
-	asserts.False(neg, true)
+	asserts.True(tester, true)
+	asserts.True(tester, false)
+	asserts.False(tester, false)
+	asserts.False(tester, true)
 
-	asserts.True(pos, asserts.Failed(neg, 2))
+	asserts.Failures(tester, 2)
 }
 
 // TestNils tests the Nil and NotNil assertions.
 func TestNils(t *testing.T) {
-	pos, neg := asserts.MkPosNeg(t)
+	tester := asserts.NewTester(t, asserts.CONTINUE)
 
-	asserts.Nil(pos, nil)
-	asserts.Nil(neg, "not nil")
-	asserts.NotNil(pos, "not nil")
-	asserts.NotNil(neg, nil)
+	asserts.Nil(tester, nil)
+	asserts.Nil(tester, "not nil")
+	asserts.NotNil(tester, "not nil")
+	asserts.NotNil(tester, nil)
 
-	asserts.True(pos, asserts.Failed(neg, 2))
+	asserts.Failures(tester, 2)
 }
 
-// TestComparisons tests the Equal and Different assertions.
+// TestComparisons tests the Equal, Different, Less, More, and AboutEqual assertions.
 func TestComparisons(t *testing.T) {
-	pos, neg := asserts.MkPosNeg(t)
+	tester := asserts.NewTester(t, asserts.CONTINUE)
 
-	asserts.Equal(pos, 42, 42)
-	asserts.Equal(neg, 42, 43)
-	asserts.Equal(pos, "foo", "foo")
-	asserts.Equal(neg, "foo", "bar")
+	asserts.Equal(tester, 42, 42)
+	asserts.Equal(tester, 42, 43)
+	asserts.Equal(tester, "foo", "foo")
+	asserts.Equal(tester, "foo", "bar")
 
-	asserts.Different(pos, 42, 43)
-	asserts.Different(neg, 42, 42)
-	asserts.Different(pos, "foo", "bar")
-	asserts.Different(neg, "foo", "foo")
+	asserts.Different(tester, 42, 43)
+	asserts.Different(tester, 42, 42)
+	asserts.Different(tester, "foo", "bar")
+	asserts.Different(tester, "foo", "foo")
 
-	asserts.AboutEqual(pos, 45, 43, 5)
-	asserts.AboutEqual(neg, 4.5, 4.3, 0.1)
+	asserts.Less(tester, 5, 3)
+	asserts.Less(tester, 3, 5)
+	asserts.Less(tester, 5.0, 3.0)
+	asserts.Less(tester, 3.0, 5.0)
 
-	asserts.True(pos, asserts.Failed(neg, 5))
+	asserts.More(tester, 3, 5)
+	asserts.More(tester, 5, 3)
+	asserts.More(tester, 3.0, 5.0)
+	asserts.More(tester, 5.0, 3.0)
+
+	asserts.AboutEqual(tester, 45, 43, 5)
+	asserts.AboutEqual(tester, 45, 43, 1)
+	asserts.AboutEqual(tester, 4.5, 4.3, 0.1)
+	asserts.AboutEqual(tester, 4.5, 4.3, 0.2)
+
+	asserts.Failures(tester, 14)
+}
+
+// TestTimes tests the Time assertions.
+func TestTimes(t *testing.T) {
+	tester := asserts.NewTester(t, asserts.CONTINUE)
+	now := time.Now()
+	later := now.Add(2 * time.Hour)
+	earlier := now.Add(-2 * time.Hour)
+
+	asserts.Before(tester, later, now)
+	asserts.Before(tester, earlier, now)
+	asserts.After(tester, earlier, now)
+	asserts.After(tester, later, now)
+	asserts.Between(tester, earlier, later, now)
+	asserts.Between(tester, earlier, now, later)
+	asserts.Between(tester, later, earlier, now)
+
+	asserts.Failures(tester, 4)
+}
+
+// TestDuration tests the Duration assertion.
+func TestDurations(t *testing.T) {
+	tester := asserts.NewTester(t, asserts.CONTINUE)
+
+	// Define a function to measure duration.
+	fnerr := func() error {
+		return errors.New("ouch")
+	}
+	fnok := func() error {
+		time.Sleep(100 * time.Millisecond)
+		return nil
+	}
+
+	// Measure the duration of the function.
+	duration := asserts.Duration(tester, fnerr)
+	duration = asserts.Duration(tester, fnok)
+
+	asserts.Shorter(tester, duration, 200*time.Millisecond)
+	asserts.Longer(tester, duration, 50*time.Millisecond)
+
+	// Test Shorter and Longer directly.
+	asserts.Shorter(tester, 100*time.Millisecond, 200*time.Millisecond)
+	asserts.Shorter(tester, 200*time.Millisecond, 100*time.Millisecond)
+	asserts.Longer(tester, 200*time.Millisecond, 100*time.Millisecond)
+	asserts.Longer(tester, 100*time.Millisecond, 200*time.Millisecond)
+
+	asserts.Failures(tester, 3)
 }
 
 // TestRange tests the Ranges assertions.
 func TestRange(t *testing.T) {
-	pos, neg := asserts.MkPosNeg(t)
+	tester := asserts.NewTester(t, asserts.CONTINUE)
 
-	asserts.InRange(pos, 42, 40, 45)
-	asserts.InRange(neg, 42, 45, 50)
-	asserts.OutOfRange(pos, 42, 45, 50)
-	asserts.OutOfRange(neg, 42, 40, 45)
+	asserts.InRange(tester, 42, 40, 45)
+	asserts.InRange(tester, 42, 45, 50)
+	asserts.OutOfRange(tester, 42, 45, 50)
+	asserts.OutOfRange(tester, 42, 40, 45)
 
-	asserts.InRange(pos, 4.2, 4, 4.5)
-	asserts.InRange(neg, 4.2, 4.5, 5)
-	asserts.OutOfRange(pos, 4.2, 4.5, 5)
-	asserts.OutOfRange(neg, 4.2, 4, 4.5)
+	asserts.InRange(tester, 4.2, 4, 4.5)
+	asserts.InRange(tester, 4.2, 4.5, 5)
+	asserts.OutOfRange(tester, 4.2, 4.5, 5)
+	asserts.OutOfRange(tester, 4.2, 4, 4.5)
 
-	asserts.InRange(pos, 2*time.Second, time.Second, 3*time.Second)
-	asserts.InRange(neg, 2*time.Second, 3*time.Second, 4*time.Second)
-	asserts.OutOfRange(pos, 2*time.Second, 3*time.Second, 4*time.Second)
-	asserts.OutOfRange(neg, 2*time.Second, time.Second, 3*time.Second)
+	asserts.InRange(tester, 2*time.Second, time.Second, 3*time.Second)
+	asserts.InRange(tester, 2*time.Second, 3*time.Second, 4*time.Second)
+	asserts.OutOfRange(tester, 2*time.Second, 3*time.Second, 4*time.Second)
+	asserts.OutOfRange(tester, 2*time.Second, time.Second, 3*time.Second)
 
-	asserts.True(pos, asserts.Failed(neg, 6))
+	asserts.Failures(tester, 6)
 }
 
 // TestErrors tests the Error assertions.
 func TestErrors(t *testing.T) {
-	pos, neg := asserts.MkPosNeg(t)
-
+	tester := asserts.NewTester(t, asserts.CONTINUE)
 	testErr := errors.New("booom")
 
-	asserts.Error(pos, testErr)
-	asserts.Error(neg, nil)
-	asserts.NoError(pos, nil)
-	asserts.NoError(neg, testErr)
-	asserts.IsError(pos, testErr, testErr)
-	asserts.IsError(neg, testErr, errors.New("ouch"))
-	asserts.ErrorContains(pos, testErr, "ooo")
-	asserts.ErrorContains(neg, testErr, "BOOOM")
-	asserts.ErrorMatches(pos, testErr, "^bo.*")
-	asserts.ErrorMatches(neg, testErr, ".*ou$")
+	asserts.Error(tester, testErr)
+	asserts.Error(tester, nil)
+	asserts.NoError(tester, nil)
+	asserts.NoError(tester, testErr)
+	asserts.IsError(tester, testErr, testErr)
+	asserts.IsError(tester, testErr, errors.New("ouch"))
+	asserts.ErrorContains(tester, testErr, "ooo")
+	asserts.ErrorContains(tester, testErr, "BOOOM")
+	asserts.ErrorMatches(tester, testErr, "^bo.*")
+	asserts.ErrorMatches(tester, testErr, ".*ou$")
 
-	asserts.True(pos, asserts.Failed(neg, 5))
+	asserts.Failures(tester, 5)
 }
 
 // TestRun tests the Run function.
 func TestRun(t *testing.T) {
-	pos, neg := asserts.MkPosNeg(t)
+	tester := asserts.NewTester(t, asserts.CONTINUE)
 	subtests := []struct {
 		name     string
 		negative bool
@@ -126,9 +184,9 @@ func TestRun(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			if test.negative {
-				asserts.Different(neg, test.expected, test.actual)
+				asserts.Different(tester, test.expected, test.actual)
 			} else {
-				asserts.Equal(pos, test.expected, test.actual)
+				asserts.Equal(tester, test.expected, test.actual)
 			}
 		})
 	}

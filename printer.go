@@ -27,7 +27,6 @@ func failf(t Tester, assertion string, format string, args ...any) {
 	format = fmt.Sprintf("%s assertion '%s' fail at %s(): %s\n", location, assertion, fun, format)
 
 	t.Errorf(format, args...)
-	t.Fail()
 }
 
 // here returns the filename and position based on a given offset.
