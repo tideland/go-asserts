@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
 // asserts for more convinient testing
 //
-// Copyright (C) 2024 Frank Mueller / Oldenburg / Germany / World
+// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
 package asserts // import "tideland.dev/go/assert"
@@ -9,7 +9,6 @@ package asserts // import "tideland.dev/go/assert"
 import (
 	"errors"
 	"regexp"
-	"strings"
 	"time"
 
 	"golang.org/x/exp/constraints"
@@ -29,14 +28,14 @@ func Failf(t Tester, format string, args ...interface{}) {
 // True checks if the given condition is true.
 func True(t Tester, condition bool) {
 	if !condition {
-		failf(t, "true", "condition is false")
+		failf(t, "true", "expected condition 'true' is 'false'")
 	}
 }
 
 // False checks if the given condition is false. It's the opposite of True.
 func False(t Tester, condition bool) {
 	if condition {
-		failf(t, "false", "condition is true")
+		failf(t, "false", "expected condition 'false' is 'true'")
 	}
 }
 
@@ -67,6 +66,20 @@ func Equal[T comparable](t Tester, expected, actual T) {
 func Different[T comparable](t Tester, expected, actual T) {
 	if expected == actual {
 		failf(t, "different", "expected is '%v', actual is '%v'", expected, actual)
+	}
+}
+
+// Match checks if the actual string matches the expected regular expression.
+// The regular expression is compiled from the expected string. If the compilation
+// fails, the assertion fails.
+func Match(t Tester, expected, actual string) {
+	re, err := regexp.Compile(expected)
+	if err != nil {
+		failf(t, "match", "failed to compile regexp from '%s': %v", expected, err)
+		return
+	}
+	if !re.MatchString(actual) {
+		failf(t, "match", "actual '%s' doesn't match '%s'", actual, expected)
 	}
 }
 
@@ -115,7 +128,7 @@ func Between(t Tester, start, end, actual time.Time) {
 	}
 }
 
-// Duration calculates the duration of a function execution. If the function returns an error, 
+// Duration calculates the duration of a function execution. If the function returns an error,
 // the test fails. The returned duration can be used as expected duration in further tests.
 func Duration(t Tester, fn func() error) time.Duration {
 	start := time.Now()
@@ -127,16 +140,16 @@ func Duration(t Tester, fn func() error) time.Duration {
 }
 
 // Shorter checks if the actual duration is shorter than the expected duration.
-func Shorter(t Tester, expected, actual time.Duration) {
-	if actual >= expected {
-		failf(t, "earlier", "actual duration '%v' is not shorter than expected duration '%v'", actual, expected)
+func Shorter(t Tester, actual, expected time.Duration) {
+	if actual > expected {
+		failf(t, "earlier", "actual duration '%v' is not shorter than expected duration '%v'", expected, actual)
 	}
 }
 
 // Longer checks if the actual duration is longer than the expected duration.
-func Longer(t Tester, expected, actual time.Duration) {
-	if actual <= expected {
-		failf(t, "later", "actual duration '%v' is not longer than expected duration '%v'", actual, expected)
+func Longer(t Tester, actual, expected time.Duration) {
+	if actual < expected {
+		failf(t, "later", "actual duration '%v' is not longer than expected duration '%v'", expected, actual)
 	}
 }
 
@@ -192,25 +205,16 @@ func IsError(t Tester, expected, actual error) {
 	}
 }
 
-// ErrorContains checks if the given error is not nil and its message
-// contains the expected substring.
-func ErrorContains(t Tester, err error, contains string) {
-	if err == nil {
-		failf(t, "error contains", "error is nil")
-	}
-	if !strings.Contains(err.Error(), contains) {
-		failf(t, "error contains", "error does not contain '%s'", contains)
-	}
-}
-
-// ErrorMatches checks if the given error is not nil and its message
+// ErrorMatch checks if the given error is not nil and its message
 // matches the expected regular expression.
-func ErrorMatches(t Tester, err error, pattern string) {
+func ErrorMatch(t Tester, err error, expected string) {
 	if err == nil {
-		failf(t, "error matches", "error is nil")
+		failf(t, "error match", "error is nil")
+		return
 	}
-	if !regexp.MustCompile(pattern).MatchString(err.Error()) {
-		failf(t, "error matches", "error does not match '%s'", pattern)
+	re := regexp.MustCompile(expected)
+	if !re.MatchString(err.Error()) {
+		failf(t, "error match", "error '%v' does not match '%s'", err.Error(), expected)
 	}
 }
 

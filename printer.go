@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
 // asserts for more convinient testing - printing fail information
 //
-// Copyright (C) 2024 Frank Mueller / Oldenburg / Germany / World
+// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
 package asserts // import "tideland.dev/go/asserts"
@@ -15,10 +15,11 @@ import (
 
 // logf prints a log message with the given information on stdout.
 func logf(t Tester, format string, args ...any) {
-	location, fun := here(3)
+	location, fun := here(2)
 	format = fmt.Sprintf("%s assertion log at %s(): %s\n", location, fun, format)
+	outout := fmt.Sprintf(format, args...)
 
-	t.Logf(format, args...)
+	fmt.Println(outout)
 }
 
 // failf prints a fail message with the given information on stderr.
