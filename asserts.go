@@ -17,7 +17,7 @@ import (
 // It's used to print additional information during testing.
 // The location and function name are added automatically.
 func Logf(t Tester, format string, args ...interface{}) {
-	logf(t, format, args...)
+	logf(format, args...)
 }
 
 // Failf is used to fail a test with a formatted message.

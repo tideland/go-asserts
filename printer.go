@@ -14,7 +14,7 @@ import (
 )
 
 // logf prints a log message with the given information on stdout.
-func logf(t Tester, format string, args ...any) {
+func logf(format string, args ...any) {
 	location, fun := here(2)
 	format = fmt.Sprintf("%s assertion log at %s(): %s\n", location, fun, format)
 	outout := fmt.Sprintf(format, args...)
