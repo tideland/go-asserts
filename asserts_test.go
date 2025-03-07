@@ -100,6 +100,29 @@ func TestComparisons(t *testing.T) {
 	// Check the number of failures.
 	asserts.Failures(tester, 10)
 }
+// TestLengths tests the Length assertion.
+func TestLengths(t *testing.T) {
+ tester := asserts.NewTester(t, asserts.CONTINUE)
+
+ // Positive test cases.
+ asserts.Length(tester, []int{1, 2, 3}, 3)
+ asserts.Length(tester, "hello", 5)
+ asserts.Length(tester, map[string]int{"a": 1, "b": 2}, 2)
+ asserts.Length(tester, [2]bool{true, false}, 2)
+ asserts.Length(tester, make(chan int, 5), 0)
+
+ // Negative test cases.
+ asserts.Length(tester, []int{1, 2, 3}, 4)
+ asserts.Length(tester, "hello", 6)
+ asserts.Length(tester, map[string]int{"a": 1, "b": 2}, 3)
+ asserts.Length(tester, [2]bool{true, false}, 1)
+
+ // Invalid type test case
+ asserts.Length(tester, 42, 0)
+
+ // Check the number of failures.
+ asserts.Failures(tester, 5)
+}
 
 // TestMatch tests the Match function.
 func TestMatch(t *testing.T) {
@@ -160,14 +183,14 @@ func TestDurations(t *testing.T) {
 
 	// Positive test cases.
 	duration := asserts.Duration(tester, fnok)
-	
+
 	asserts.Shorter(tester, duration, 200*time.Millisecond)
 	asserts.Shorter(tester, 100*time.Millisecond, 200*time.Millisecond)
 	asserts.Longer(tester, 200*time.Millisecond, 100*time.Millisecond)
 
 	// Negative test cases.
 	_ = asserts.Duration(tester, fnerr)
-	
+
 	asserts.Longer(tester, duration, 50*time.Millisecond)
 	asserts.Shorter(tester, 200*time.Millisecond, 100*time.Millisecond)
 	asserts.Longer(tester, 100*time.Millisecond, 200*time.Millisecond)

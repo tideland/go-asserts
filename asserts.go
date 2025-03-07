@@ -8,6 +8,7 @@ package asserts // import "tideland.dev/go/assert"
 
 import (
 	"errors"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -16,12 +17,12 @@ import (
 
 // It's used to print additional information during testing.
 // The location and function name are added automatically.
-func Logf(t Tester, format string, args ...interface{}) {
+func Logf(t Tester, format string, args ...any) {
 	logf(format, args...)
 }
 
 // Failf is used to fail a test with a formatted message.
-func Failf(t Tester, format string, args ...interface{}) {
+func Failf(t Tester, format string, args ...any) {
 	failf(t, "fail", format, args...)
 }
 
@@ -66,6 +67,21 @@ func Equal[T comparable](t Tester, expected, actual T) {
 func Different[T comparable](t Tester, expected, actual T) {
 	if expected == actual {
 		failf(t, "different", "expected is '%v', actual is '%v'", expected, actual)
+	}
+}
+
+// Length checks if the given value has the expected length. This only
+// works for the according types for len(). All others fail.
+func Length(t Tester, actual any, length int) {
+	rv := reflect.ValueOf(actual)
+	switch rv.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		actualLength := rv.Len()
+		if rv.Len() != length {
+			failf(t, "length", "expected length is '%d', actual length is '%d'", length, actualLength)
+		}
+	default:
+		failf(t, "length", "cannot determine length of %v of type %T", actual, actual)
 	}
 }
 
