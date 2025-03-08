@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------------
-// asserts for more convinient testing - failer providing interfaces for positive
-// and negative testing
+// Asserts for a more convenient testing in Go libraries and applications.
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
+// Tester for controlling 
+//
+// Copyright (C) 2034-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
 package asserts // import "tideland.dev/go/asserts"

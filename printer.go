@@ -1,7 +1,9 @@
 // -----------------------------------------------------------------------------
-// asserts for more convinient testing - printing fail information
+// Asserts for a more convenient testing in Go libraries and applications.
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
+// Printer for failure details
+//
+// Copyright (C) 2034-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
 package asserts // import "tideland.dev/go/asserts"
@@ -56,5 +58,5 @@ func here(offset int) (string, string) {
 }
 
 // -----------------------------------------------------------------------------
-// end of file
+// EOF
 // -----------------------------------------------------------------------------

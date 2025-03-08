@@ -1,7 +1,9 @@
 // -----------------------------------------------------------------------------
-// asserts for more convinient testing
+// Asserts for a more convenient testing in Go libraries and applications.
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
+// Set of different asserts for unit test
+//
+// Copyright (C) 2034-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
 package asserts // import "tideland.dev/go/assert"
@@ -235,5 +237,5 @@ func ErrorMatch(t Tester, err error, expected string) {
 }
 
 // -----------------------------------------------------------------------------
-// end of file
+// EOF
 // -----------------------------------------------------------------------------
