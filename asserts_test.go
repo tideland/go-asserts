@@ -10,6 +10,8 @@ package asserts_test
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -274,6 +276,26 @@ func TestRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Stringer implementor for test.
+type MyInt int
+
+func (mi MyInt) String() string {
+	return fmt.Sprintf("%d", mi)
+}
+
+// TestImplements tests the Implements assertion.
+func TestImplements(t *testing.T) {
+	tester := asserts.NewTester(t, asserts.CONTINUE)
+
+	var it MyInt = MyInt(42)
+
+	asserts.Implements(tester, it, (*fmt.Stringer)(nil))
+	asserts.Implements(tester, it, (*io.Reader)(nil))
+
+	// Check the number of failures.
+	asserts.Failures(tester, 1)
 }
 
 // -----------------------------------------------------------------------------

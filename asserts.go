@@ -236,6 +236,32 @@ func ErrorMatch(t Tester, err error, expected string) {
 	}
 }
 
+// Implements checks if the given instance implements the expected interface.
+// The expected parameter has to be an interface type as nil pointer like
+// (*fmt.Stringer)(nil) or (*io.Reader)(nil).
+func Implements(t Tester, actual any, expected any) {
+	if actual == nil {
+		failf(t, "implements", "actual value is nil")
+		return
+	}
+
+	if expected == nil {
+		failf(t, "implements", "expected interface is nil")
+		return
+	}
+
+	expectedType := reflect.TypeOf(expected).Elem()
+	if expectedType.Kind() != reflect.Interface {
+		failf(t, "implements", "expected type %v is not an interface", expectedType)
+		return
+	}
+
+	actualType := reflect.TypeOf(actual)
+	if !actualType.Implements(expectedType) {
+		failf(t, "implements", "type %v does not implement %v", actualType, expectedType)
+	}
+}
+
 // -----------------------------------------------------------------------------
 // EOF
 // -----------------------------------------------------------------------------
