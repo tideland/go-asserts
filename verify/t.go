@@ -3,162 +3,139 @@
 //
 // Replacement of testing.T to allow teest without immediate fail
 //
-// Copyright (C) 2034-2025 Frank Mueller / Oldenburg / Germany / Earth
+// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
 package verify // import "tideland.dev/go/assert/verify"
 
 import (
 	"fmt"
-	"path/filepath"
+	"path"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
-// T is an interface that matches the common methods of testing.T
+// -----------------------------------------------------------------------------
+// testing.T Replacement
+// -----------------------------------------------------------------------------
+
+// T replaces testing.T for tests. Missing methods are handled internally.
 type T interface {
-	Fail()
-	FailNow()
-	Log(args ...any)
-	Logf(format string, args ...any)
 	Errorf(format string, args ...any)
 }
 
-// continueTesting is a wrapper around *testing.T that
+// continuationTesting is a wrapper around *testing.T that
 // indicates the test should continue running even after
 // a verification failure
-type continueTesting struct {
+type continuationTesting struct {
 	*testing.T
+	start  time.Time
 	failed int
+	msgs   []string
 }
 
 // Ensure the wrapper implement T
-var _ T = (*continueTesting)(nil)
+var _ T = (*continuationTesting)(nil)
 
-// ContinueTesting creates a new T instance that continues after
-// failures.
-func ContinueTesting(t *testing.T) T {
-	return &continueTesting{t, 0}
+func (ct *continuationTesting) Errorf(format string, args ...any) {
+	if ct.failed == 0 {
+		now := time.Now()
+		ct.msgs = append(ct.msgs, fmt.Sprintf("--- FAIL: %s (%s)", ct.T.Name(), now.Sub(ct.start)))
+	}
+
+	ct.failed++
+
+	location := here(5)
+	locatedformat := "    " + location + ": " + format
+
+	ct.msgs = append(ct.msgs, fmt.Sprintf(locatedformat, args...))
+
+	for _, msg := range ct.msgs {
+		fmt.Printf("%s\n", msg)
+	}
+
+	ct.msgs = nil
+}
+
+// -----------------------------------------------------------------------------
+// Library API
+// -----------------------------------------------------------------------------
+
+// ContinuationTesting creates a new T instance that continues after
+// testing failures.
+func ContinuationTesting(t *testing.T) T {
+	return &continuationTesting{t, time.Now(), 0, nil}
 }
 
 // IsContinueT checks if a testing.T is a continueTesting type.
 func IsContinueT(t T) bool {
-	_, ok := t.(*continueTesting)
+	_, ok := t.(*continuationTesting)
 	return ok
 }
 
-// ContinousFailings returns the number of failures if t is a
-// continued testing.
-func ContinousFailings(t T) int {
-	ct, ok := t.(*continueTesting)
-	if !ok {
-		t.Errorf("not a continuing testing")
-	}
-	return ct.failed
-}
-
-// Logf is used to print additional information during testing.
-// The location and function name are added automatically.
-func Logf(t *testing.T, format string, args ...any) {
-	t.Helper()
-	output := fmt.Sprintf(format, args...)
-	t.Logf(output)
-}
-
-// Failf is a helper function that fails a test with a formatted
-// message. If t is a continueTesting, it only calls Errorf, otherwise
-// it also calls FailNow.
-func Failf(t T, verification string, format string, args ...any) {
-	tPtr, _ := t.(*testing.T)
-	if tPtr != nil {
-		tPtr.Helper()
-	}
-
-	output := failureInformation(tPtr, verification, format, args...)
-
-	t.Errorf(output)
-
-	// If it's not a continueTesting wrapper, also call FailNow
-	if _, ok := t.(*continueTesting); !ok {
-		t.FailNow()
-	}
-
-	t.(*continueTesting).failed++
-}
-
-// failAfterVerification creates a simple Failf() in default format for
-// a failed verification.
-func failAfterVerification(t T, verification string, expected, got any) {
-	output := fmt.Sprintf("expected %v, got %v", expected, got)
-	Failf(t, verification, output)
-}
-
-// failureInformation retrieves information and provides a string
-// describing location and details about failure.
-func failureInformation(t *testing.T, verification string, format string, args ...any) string {
-	failmsg := fmt.Sprintf("fail '%s':%s ", verification, fmt.Sprintf(format, args...))
-
-	if t == nil {
-		return failmsg
-	}
-
-	// Retrieve detailed info
-	callInfo := getCallInfo(t)
-	indent := strings.Repeat("    ", callInfo.level)
-	location := fmt.Sprintf("%s:%d", callInfo.filename, callInfo.line)
-
-	return fmt.Sprintf("%s%s: %s", indent, location, failmsg)
-}
-
-// getCallInfo analysiert den Call Stack und gibt die relevante Aufrufposition zurück
-func getCallInfo(t *testing.T) callInfo {
-	var info callInfo
-
-	info.testname = t.Name()
-	parts := strings.Split(info.testname, "/")
-
-	info.level = len(parts) - 1
-
-	// Search in call stack
-	for i := 1; i < 10; i++ {
-		pc, file, line, ok := runtime.Caller(i)
-		if !ok {
-			break
+// ConinuedFails validates how many tests failed during continued
+// test to verify the expected number.
+func ConinuedFails(t T, expected int) bool {
+	if ct, ok := t.(*continuationTesting); ok {
+		if ct.failed != expected {
+			ct.Errorf("fail %q verification: want '%v', got '%v'", "continued fails", expected, ct.failed)
 		}
+		return true
+	}
+	t.Errorf("t is no continuation testing")
+	return false
+}
 
-		// Take none of the test library files
-		if strings.Contains(file, "testing.go") ||
-			strings.Contains(file, "verify/t.go") ||
-			strings.Contains(file, "asserts/") {
-			continue
-		}
+// -----------------------------------------------------------------------------
+// UTILS
+// -----------------------------------------------------------------------------
 
-		// Get the function name
-		fn := runtime.FuncForPC(pc)
-		funcName := fn.Name()
+type failNowT interface {
+	FailNow()
+}
 
-		// Test-Funktionen erkennen (beginnen mit "Test")
-		if !strings.Contains(funcName, ".Test") {
-			// Found it
-			info.filename = filepath.Base(file)
-			info.line = line
-			info.function = funcName
-			break
+// verificationFailure raises an error containing the failure message.
+func verificationFailure(t T, verification string, expected, got any) {
+	if tt, ok := t.(*testing.T); ok {
+		tt.Helper()
+		tt.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+		return
+	}
+	if ct, ok := t.(*continuationTesting); ok {
+		ct.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+		return
+	}
+	if ft, ok := t.(failNowT); ok {
+		ft.FailNow()
+		return
+	}
+	t.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+}
+
+// here returns the location at the offseet of the caller.
+func here(offset int) string {
+	// Retrieve program counters
+	pcs := make([]uintptr, 1)
+	n := runtime.Callers(offset, pcs)
+	if n == 0 {
+		return ""
+	}
+	pcs = pcs[:n]
+	// Build ID based on program counters
+	frames := runtime.CallersFrames(pcs)
+	for {
+		frame, more := frames.Next()
+		_, function := path.Split(frame.Function)
+		parts := strings.Split(function, ".")
+		function = strings.Join(parts[1:], ".")
+		_, file := path.Split(frame.File)
+		location := fmt.Sprintf("%s:%d: %s()", file, frame.Line, function)
+		if !more {
+			return location
 		}
 	}
-
-	return info
-}
-
-// callInfo contains information about the failure location
-// and description.
-type callInfo struct {
-	filename string // Dateiname
-	line     int    // Zeilennummer
-	function string // Funktionsname
-	testname string // Name des Tests/Subtests
-	level    int    // Verschachtelungsebene des Tests
 }
 
 // -----------------------------------------------------------------------------

@@ -1,110 +1,289 @@
 // -----------------------------------------------------------------------------
 // Convenient verification of unit tests in Go libraries and applications.
-// 
+//
 // Unit tests
 //
-// Copyright (C) 2034-2025 Frank Mueller / Oldenburg / Germany / Earth
+// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
 package verify_test
 
 import (
+	"errors"
 	"testing"
+	"time"
 
-	"tideland.dev/go/assert/verify"
+	"tideland.dev/go/asserts/verify"
 )
 
-// TestTrue tests the True verification function.
-func TestTrue(t *testing.T) {
-	// Standard case - should pass without error
+// TestBoolean tests the True and False verification functions.
+func TestBoolean(t *testing.T) {
+	// Standard testing
 	verify.True(t, true)
-
-	// Now test with ContinueTesting to check failures
-	ct := verify.ContinueTesting(t)
-	
-	// This should fail
-	verify.True(ct, false)
-	
-	// This should pass
-	verify.True(ct, true)
-	
-	// Check that we had one failure
-	if verify.ContinousFailings(ct) != 1 {
-		t.Errorf("expected 1 failure, got %d", verify.ContinousFailings(ct))
-	}
-}
-
-// TestFalse tests the False verification function.
-func TestFalse(t *testing.T) {
-	// Standard case - should pass without error
 	verify.False(t, false)
 
-	// Now test with ContinueTesting to check failures
-	ct := verify.ContinueTesting(t)
-	
-	// This should fail
+	// Continued testing
+	ct := verify.ContinuationTesting(t)
+
+	verify.True(ct, false)
+	verify.True(ct, true)
 	verify.False(ct, true)
-	
-	// This should pass
 	verify.False(ct, false)
-	
-	// Check that we had one failure
-	if verify.ContinousFailings(ct) != 1 {
-		t.Errorf("expected 1 failure, got %d", verify.ContinousFailings(ct))
-	}
+
+	verify.ConinuedFails(ct, 2)
 }
 
-// TestNilAndNotNil tests the Nil and NotNil verification functions.
-func TestNilAndNotNil(t *testing.T) {
-	// Test cases for Nil
-	var nilPtr *int
-	var nonNilPtr = new(int)
-	
-	// Standard case - should pass without error
+// TestNils tests the Nil and NotNil verification functions.
+func TestNils(t *testing.T) {
+	// Create continuation testing instances
+	ct := verify.ContinuationTesting(t)
+
+	// Positive test cases.
 	verify.Nil(t, nil)
-	verify.Nil(t, nilPtr)
-	
-	// Now test with ContinueTesting to check failures
-	ct := verify.ContinueTesting(t)
-	
-	// These should fail
-	verify.Nil(ct, 42)
-	verify.Nil(ct, "string")
-	verify.Nil(ct, nonNilPtr)
-	
-	// These should pass
-	verify.Nil(ct, nil)
-	verify.Nil(ct, nilPtr)
-	
-	// Check for NotNil
-	verify.NotNil(ct, 42)
-	verify.NotNil(ct, "string")
-	verify.NotNil(ct, nonNilPtr)
-	
-	// These should fail
+	verify.NotNil(t, "not nil")
+
+	// Negative test cases.
+	verify.Nil(ct, "not nil")
 	verify.NotNil(ct, nil)
-	verify.NotNil(ct, nilPtr)
-	
-	// Check that we had expected failures
-	if verify.ContinousFailings(ct) != 5 {
-		t.Errorf("expected 5 failures, got %d", verify.ContinousFailings(ct))
-	}
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 2)
 }
 
-// TestIsContinueT tests the IsContinueT function.
-func TestIsContinueT(t *testing.T) {
+// TestStrings tests the Equal and Different verification functions for strings.
+func TestStrings(t *testing.T) {
+	// Create continuation testing instance
+	ct := verify.ContinuationTesting(t)
+
+	// Positive test cases
+	verify.Equal(t, "hello", "hello")
+	verify.Different(t, "hello", "world")
+
+	// Negative test cases
+	verify.Equal(ct, "hello", "world")
+	verify.Different(ct, "same", "same")
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 2)
+}
+
+// TestComparisons tests the Equal, Different, Less, More, and AboutEqual verification functions.
+func TestComparisons(t *testing.T) {
+	// Positive test cases with regular testing.T
+	verify.Equal(t, 42, 42)
+	verify.Equal(t, "foo", "foo")
+	verify.Different(t, 42, 43)
+	verify.Different(t, "foo", "bar")
+	verify.Less(t, 10, 5)
+	verify.Less(t, 10.0, 5.0)
+	verify.More(t, 5, 10)
+	verify.More(t, 5.0, 10.0)
+	verify.AboutEqual(t, 43, 45, 5)
+	verify.AboutEqual(t, 4.3, 4.5, 0.3)
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuationTesting(t)
+
+	// Negative test cases with continuation testing
+	verify.Equal(ct, 42, 43)
+	verify.Equal(ct, "foo", "bar")
+	verify.Different(ct, 42, 42)
+	verify.Different(ct, "foo", "foo")
+	verify.Less(ct, 5, 10)
+	verify.Less(ct, 5.0, 10.0)
+	verify.More(ct, 10, 5)
+	verify.More(ct, 10.0, 5.0)
+	verify.AboutEqual(ct, 43, 45, 1)
+	verify.AboutEqual(ct, 4.3, 4.5, 0.1)
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 10)
+}
+
+// TestLengths tests the Length verification function.
+func TestLengths(t *testing.T) {
+	// Positive test cases with regular testing.T
+	verify.Length(t, []int{1, 2, 3}, 3)
+	verify.Length(t, "hello", 5)
+	verify.Length(t, map[string]int{"a": 1, "b": 2}, 2)
+	verify.Length(t, [2]bool{true, false}, 2)
+	verify.Length(t, make(chan int, 5), 0)
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuationTesting(t)
+
+	// Negative test cases with continuation testing
+	verify.Length(ct, []int{1, 2, 3}, 4)
+	verify.Length(ct, "hello", 6)
+	verify.Length(ct, map[string]int{"a": 1, "b": 2}, 3)
+	verify.Length(ct, [2]bool{true, false}, 1)
+
+	// Invalid type test case
+	verify.Length(ct, 42, 0)
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 5)
+}
+
+// TestMatch tests the Match function.
+func TestMatch(t *testing.T) {
+	// Positive test cases with regular testing.T
+	verify.Match(t, "^hello", "hello world")
+	verify.Match(t, "world$", "hello world")
+	verify.Match(t, "h.llo", "hello")
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuationTesting(t)
+
+	// Test cases where the regular expression should not match the actual string.
+	verify.Match(ct, "^world", "hello world")
+	verify.Match(ct, "hello$", "hello world")
+	verify.Match(ct, "h.llo", "world")
+
+	// Test case where the regular expression compilation should fail.
+	verify.Match(ct, "[invalid", "hello world")
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 4)
+}
+
+// TestTimes tests the Time verification functions.
+func TestTimes(t *testing.T) {
+	now := time.Now()
+	later := now.Add(2 * time.Hour)
+	earlier := now.Add(-2 * time.Hour)
+
+	// Positive test cases with regular testing.T
+	verify.Before(t, later, now)
+	verify.After(t, earlier, now)
+	verify.Between(t, earlier, later, now)
+
+	// Create continuation testing instance
+	ct := verify.ContinuationTesting(t)
+
+	// Negative test cases with continuation testing
+	verify.Before(ct, earlier, now)
+	verify.After(ct, later, now)
+	verify.Between(ct, later, earlier, now)
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 3)
+}
+
+// TestDuration tests the Duration verification function.
+func TestDurations(t *testing.T) {
+	// Positive test cases.
+	verify.Shorter(t, 2*time.Second, time.Second)
+	verify.Longer(t, time.Second, 2*time.Second)
+
+	// Create continuation testing instance
+	ct := verify.ContinuationTesting(t)
+
+	// Negative test cases.
+	verify.Shorter(ct, time.Second, 2*time.Second)
+	verify.Longer(ct, 2*time.Second, time.Second)
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 2)
+}
+
+// TestRange tests the Ranges assertions.
+func TestRange(t *testing.T) {
+	// Positive test cases.
+	verify.InRange(t, 30, 50, 40)
+	verify.OutOfRange(t, 30, 40, 50)
+	verify.InRange(t, 3.0, 5.0, 4.0)
+	verify.OutOfRange(t, 3.0, 4.0, 5.0)
+	verify.InRange(t, 3*time.Second, 5*time.Second, 4*time.Second)
+	verify.OutOfRange(t, 3*time.Second, 4*time.Second, 5*time.Second)
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuationTesting(t)
+
+	// Negative test cases.
+	verify.InRange(ct, 30, 40, 50)
+	verify.OutOfRange(ct, 30, 50, 40)
+	verify.InRange(ct, 3.0, 4.0, 5.0)
+	verify.OutOfRange(ct, 3.0, 5.0, 4.0)
+	verify.InRange(ct, 3*time.Second, 4*time.Second, 5*time.Second)
+	verify.OutOfRange(ct, 3*time.Second, 5*time.Second, 4*time.Second)
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 6)
+}
+
+// TestErrors tests the Error verification functions.
+func TestErrors(t *testing.T) {
+	testErr := errors.New("booom")
+
+	// Positive test cases with regular testing.T
+	verify.Error(t, testErr)
+	verify.NoError(t, nil)
+	verify.IsError(t, testErr, testErr)
+	verify.ErrorMatch(t, "^bo.*", testErr)
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuationTesting(t)
+
+	// Negative test cases with continuation testing
+	verify.Error(ct, nil)
+	verify.NoError(ct, testErr)
+	verify.IsError(ct, testErr, errors.New("ouch"))
+	verify.ErrorMatch(ct, ".*ou$", testErr)
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 4)
+}
+
+// TestRun tests the Run function.
+func TestRun(t *testing.T) {
+	// Positive test cases with regular testing.T
+	t.Run("Positive Cases", func(t *testing.T) {
+		t.Run("int", func(t *testing.T) {
+			verify.Equal(t, 42, 42)
+		})
+		t.Run("string", func(t *testing.T) {
+			verify.Equal(t, "foo", "foo")
+		})
+	})
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuationTesting(t)
+
+	// Negative test cases with continuation testing
+	t.Run("Negative Cases", func(t *testing.T) {
+		t.Run("int", func(t *testing.T) {
+			verify.Equal(ct, 42, 43)
+		})
+		t.Run("float", func(t *testing.T) {
+			verify.Equal(ct, 4.2, 4.3)
+		})
+		t.Run("string", func(t *testing.T) {
+			verify.Equal(ct, "foo", "bar")
+		})
+	})
+
+	// Check the number of failures.
+	verify.ConinuedFails(ct, 3)
+}
+
+// TestIsContinue tests the IsContinueT function.
+func TestIsContinue(t *testing.T) {
 	// Create a continue testing instance
-	ct := verify.ContinueTesting(t)
-	
+	ct := verify.ContinuationTesting(t)
+
 	// Check that it is identified correctly
 	if !verify.IsContinueT(ct) {
 		t.Error("IsContinueT should recognize ContinueTesting instance")
 	}
-	
+
 	// Regular testing.T should not be recognized
 	if verify.IsContinueT(t) {
 		t.Error("IsContinueT should not recognize regular testing.T")
 	}
+
+	// Check that we had expected failures
+	verify.ConinuedFails(ct, 0)
 }
 
 // -----------------------------------------------------------------------------

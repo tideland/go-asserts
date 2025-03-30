@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
 // Asserts for a more convenient testing in Go libraries and applications.
 //
-// Tester for controlling 
+// Tester for controlling
 //
 // Copyright (C) 2034-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
@@ -10,6 +10,8 @@ package asserts // import "tideland.dev/go/asserts"
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sync"
 	"testing"
@@ -22,6 +24,40 @@ const (
 	FAIL     Behavior = true
 	CONTINUE Behavior = false
 )
+
+// Store working dir for output.
+var modDir string
+
+func init() {
+	// Start from current directory
+	dir, err := os.Getwd()
+	if err != nil {
+		return
+	}
+
+	// Look for go.mod file by traversing up the directory tree
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			// Found go.mod
+			modDir = dir
+			return
+		}
+
+		// Move up one directory
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Reached root directory without finding go.mod
+			break
+		}
+		dir = parent
+	}
+
+	// Fallback to current working directory if go.mod not found
+	wd, err := os.Getwd()
+	if err == nil {
+		modDir = wd
+	}
+}
 
 // Tester is the interface for the testing.TB interface. It helps to count
 // failures without breaking the test.
@@ -65,7 +101,8 @@ func (t *tester) Errorf(format string, args ...any) {
 	defer t.mux.Unlock()
 	t.failures = append(t.failures, fmt.Sprintf(format, args...))
 	if t.fail {
-		t.TB.Errorf(format, args...)
+		fmt.Printf(format, args...)
+		t.TB.Fail()
 	}
 }
 
