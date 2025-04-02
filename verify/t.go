@@ -14,7 +14,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 )
 
 // -----------------------------------------------------------------------------
@@ -26,36 +25,29 @@ type T interface {
 	Errorf(format string, args ...any)
 }
 
-// continuationTesting is a wrapper around *testing.T that
+// continuedTesting is a wrapper around *testing.T that
 // indicates the test should continue running even after
 // a verification failure
-type continuationTesting struct {
+type continuedTesting struct {
 	*testing.T
-	start  time.Time
 	failed int
 	msgs   []string
 }
 
 // Ensure the wrapper implement T
-var _ T = (*continuationTesting)(nil)
+var _ T = (*continuedTesting)(nil)
 
-func (ct *continuationTesting) Errorf(format string, args ...any) {
-	if ct.failed == 0 {
-		now := time.Now()
-		ct.msgs = append(ct.msgs, fmt.Sprintf("--- FAIL: %s (%s)", ct.T.Name(), now.Sub(ct.start)))
-	}
-
+func (ct *continuedTesting) Errorf(format string, args ...any) {
 	ct.failed++
 
 	location := here(5)
-	locatedformat := "    " + location + ": " + format
+	locatedformat := "    " + location + ": continuation " + format
 
 	ct.msgs = append(ct.msgs, fmt.Sprintf(locatedformat, args...))
 
 	for _, msg := range ct.msgs {
-		fmt.Printf("%s\n", msg)
+		fmt.Println(msg)
 	}
-
 	ct.msgs = nil
 }
 
@@ -63,29 +55,36 @@ func (ct *continuationTesting) Errorf(format string, args ...any) {
 // Library API
 // -----------------------------------------------------------------------------
 
-// ContinuationTesting creates a new T instance that continues after
+// ContinuedTesting creates a new T instance that continues after
 // testing failures.
-func ContinuationTesting(t *testing.T) T {
-	return &continuationTesting{t, time.Now(), 0, nil}
+func ContinuedTesting(t *testing.T) T {
+	ct := &continuedTesting{t, 0, nil}
+	return ct
 }
 
 // IsContinueT checks if a testing.T is a continueTesting type.
 func IsContinueT(t T) bool {
-	_, ok := t.(*continuationTesting)
+	_, ok := t.(*continuedTesting)
 	return ok
 }
 
-// ConinuedFails validates how many tests failed during continued
+// FailureCount validates how many tests failed during continued
 // test to verify the expected number.
-func ConinuedFails(t T, expected int) bool {
-	if ct, ok := t.(*continuationTesting); ok {
-		if ct.failed != expected {
-			ct.Errorf("fail %q verification: want '%v', got '%v'", "continued fails", expected, ct.failed)
-		}
-		return true
+func FailureCount(t T, expected int) bool {
+	var ct *continuedTesting
+	var ok bool
+
+	if ct, ok = t.(*continuedTesting); !ok {
+		t.Errorf("t is no continuation testing")
+		return false
 	}
-	t.Errorf("t is no continuation testing")
-	return false
+
+	if ct.failed != expected {
+		failed := ct.failed
+		verificationFailure(t, "failure count", expected, failed)
+		ct.T.Fail()
+	}
+	return true
 }
 
 // -----------------------------------------------------------------------------
@@ -103,14 +102,14 @@ func verificationFailure(t T, verification string, expected, got any) {
 		tt.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
 		return
 	}
-	if ct, ok := t.(*continuationTesting); ok {
+	if ct, ok := t.(*continuedTesting); ok {
 		ct.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
 		return
 	}
-	if ft, ok := t.(failNowT); ok {
-		ft.FailNow()
-		return
-	}
+	// if ft, ok := t.(failNowT); ok {
+	// 	ft.FailNow()
+	// 	return
+	// }
 	t.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
 }
 
@@ -131,7 +130,7 @@ func here(offset int) string {
 		parts := strings.Split(function, ".")
 		function = strings.Join(parts[1:], ".")
 		_, file := path.Split(frame.File)
-		location := fmt.Sprintf("%s:%d: %s()", file, frame.Line, function)
+		location := fmt.Sprintf("%s:%d", file, frame.Line)
 		if !more {
 			return location
 		}
