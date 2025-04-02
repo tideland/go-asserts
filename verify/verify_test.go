@@ -19,7 +19,8 @@ import (
 // TestVerify ensures the correct error handling of the package.
 func TestVerify(t *testing.T) {
 	// t.Skip("Verification skip")
-
+	
+	t.Log("verification test started")
 	// verify.True(t, false)
 
 	ct := verify.ContinuedTesting(t)

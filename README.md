@@ -9,6 +9,10 @@
 
 Extensions to standard testing for easier assertions.
 
+- `verify` provides different tests usable with the standard testing package.
+  Additionally a continued testing can easily test verifications without immediate failure.
+- `capture` allows to capture stdout and stderr for verifications.
+
 ## Contributors
 
 - Frank Mueller (https://github.com/themue / https://github.com/tideland / https://tideland.dev)
