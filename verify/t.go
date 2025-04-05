@@ -91,8 +91,8 @@ func FailureCount(t T, expected int) bool {
 // UTILS
 // -----------------------------------------------------------------------------
 
-type failNowT interface {
-	FailNow()
+type helperT interface {
+	Helper()
 }
 
 // verificationFailure raises an error containing the failure message.
@@ -100,16 +100,13 @@ func verificationFailure(t T, verification string, expected, got any) {
 	if tt, ok := t.(*testing.T); ok {
 		tt.Helper()
 		tt.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+		tt.FailNow()
 		return
 	}
 	if ct, ok := t.(*continuedTesting); ok {
 		ct.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
 		return
 	}
-	// if ft, ok := t.(failNowT); ok {
-	// 	ft.FailNow()
-	// 	return
-	// }
 	t.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
 }
 
