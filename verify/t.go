@@ -10,9 +10,6 @@ package verify // import "tideland.dev/go/assert/verify"
 
 import (
 	"fmt"
-	"path"
-	"runtime"
-	"strings"
 	"testing"
 )
 
@@ -38,15 +35,14 @@ type continuedTesting struct {
 var _ T = (*continuedTesting)(nil)
 
 func (ct *continuedTesting) Errorf(format string, args ...any) {
+	ct.Helper()
+
 	ct.failed++
 
-	location := here(5)
-	locatedformat := "    " + location + ": continuation " + format
-
-	ct.msgs = append(ct.msgs, fmt.Sprintf(locatedformat, args...))
+	ct.msgs = append(ct.msgs, fmt.Sprintf(format, args...))
 
 	for _, msg := range ct.msgs {
-		fmt.Println(msg)
+		ct.T.Log(msg)
 	}
 	ct.msgs = nil
 }
@@ -62,8 +58,8 @@ func ContinuedTesting(t *testing.T) T {
 	return ct
 }
 
-// IsContinueT checks if a testing.T is a continueTesting type.
-func IsContinueT(t T) bool {
+// IsContinued checks if a testing.T is a continueTesting type.
+func IsContinued(t T) bool {
 	_, ok := t.(*continuedTesting)
 	return ok
 }
@@ -75,7 +71,7 @@ func FailureCount(t T, expected int) bool {
 	var ok bool
 
 	if ct, ok = t.(*continuedTesting); !ok {
-		t.Errorf("t is no continuation testing")
+		t.Errorf("t is no continued testing")
 		return false
 	}
 
@@ -91,10 +87,6 @@ func FailureCount(t T, expected int) bool {
 // UTILS
 // -----------------------------------------------------------------------------
 
-type helperT interface {
-	Helper()
-}
-
 // verificationFailure raises an error containing the failure message.
 func verificationFailure(t T, verification string, expected, got any) {
 	if tt, ok := t.(*testing.T); ok {
@@ -104,34 +96,11 @@ func verificationFailure(t T, verification string, expected, got any) {
 		return
 	}
 	if ct, ok := t.(*continuedTesting); ok {
+		ct.Helper()
 		ct.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
 		return
 	}
 	t.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
-}
-
-// here returns the location at the offseet of the caller.
-func here(offset int) string {
-	// Retrieve program counters
-	pcs := make([]uintptr, 1)
-	n := runtime.Callers(offset, pcs)
-	if n == 0 {
-		return ""
-	}
-	pcs = pcs[:n]
-	// Build ID based on program counters
-	frames := runtime.CallersFrames(pcs)
-	for {
-		frame, more := frames.Next()
-		_, function := path.Split(frame.Function)
-		parts := strings.Split(function, ".")
-		function = strings.Join(parts[1:], ".")
-		_, file := path.Split(frame.File)
-		location := fmt.Sprintf("%s:%d", file, frame.Line)
-		if !more {
-			return location
-		}
-	}
 }
 
 // -----------------------------------------------------------------------------

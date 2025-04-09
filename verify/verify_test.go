@@ -264,22 +264,24 @@ func TestRun(t *testing.T) {
 	}
 
 	// Positive test cases with continuation testing
-	for _, positive := range positives {
-		positive := positive
-		t.Run(positive.name, func(t *testing.T) {
+	t.Log("positive tests")
+	t.Run("positives", func(t *testing.T) {
+		t.Log("inside positive tests")
+		for _, positive := range positives {
 			verify.Equal(t, positive.expect, positive.got)
-		})
-	}
+		}
+	})
 
 	// Negative test cases with continuation testing
 	ct := verify.ContinuedTesting(t)
 
-	for _, negative := range negatives {
-		negative := negative
-		t.Run(negative.name, func(t *testing.T) {
+	t.Log("negative tests")
+	t.Run("negatives", func(t *testing.T) {
+		t.Log("inside negative tests")
+		for _, negative := range negatives {
 			verify.Equal(ct, negative.expect, negative.got)
-		})
-	}
+		}
+	})
 
 	verify.FailureCount(ct, 3)
 }
@@ -290,12 +292,12 @@ func TestIsContinue(t *testing.T) {
 	ct := verify.ContinuedTesting(t)
 
 	// Check that it is identified correctly
-	if !verify.IsContinueT(ct) {
+	if !verify.IsContinued(ct) {
 		t.Error("IsContinueT should recognize ContinueTesting instance")
 	}
 
 	// Regular testing.T should not be recognized
-	if verify.IsContinueT(t) {
+	if verify.IsContinued(t) {
 		t.Error("IsContinueT should not recognize regular testing.T")
 	}
 
