@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -117,28 +118,6 @@ func Length(t T, actual any, length int) bool {
 	return true
 }
 
-// Match checks if the actual string matches the expected regular expression.
-// The regular expression is compiled from the expected string. If the compilation
-// fails, the assertion fails.
-func Match(t T, expected, actual string) bool {
-	re, err := regexp.Compile(expected)
-	if err != nil {
-		if ht, ok := t.(testing.TB); ok {
-			ht.Helper()
-		}
-		verificationFailure(t, "does match", expected, err)
-		return false
-	}
-	if !re.MatchString(actual) {
-		if ht, ok := t.(testing.TB); ok {
-			ht.Helper()
-		}
-		verificationFailure(t, "does match", expected, actual)
-		return false
-	}
-	return true
-}
-
 // Less checks if the actual value is less than the expected one.
 // Supports integers, floats, and time.Duration.
 func Less[C constraints.Integer | constraints.Float](t T, expected, actual C) bool {
@@ -174,6 +153,53 @@ func AboutEqual[C constraints.Integer | constraints.Float](t T, expected, actual
 		}
 		expectedDescr := fmt.Sprintf("%v' +/- '%v'", expected, delta)
 		verificationFailure(t, "is about equal", expectedDescr, actual)
+		return false
+	}
+	return true
+}
+
+// Contains check if the actual string contains the expected string.
+func Contains(t T, expected, actual string) bool {
+	if !strings.Contains(actual, expected) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "contains", expected, actual)
+		return false
+	}
+	return true
+}
+
+// ContainsAny checks if the actual string contains any of the expected strings.
+func ContainsAny(t T, expected []string, actual string) bool {
+	for _, exp := range expected {
+		if strings.Contains(actual, exp) {
+			return true
+		}
+	}
+	if ht, ok := t.(testing.TB); ok {
+		ht.Helper()
+	}
+	expectedList := "[" + strings.Join(expected, ", ") + "]"
+	verificationFailure(t, "contains any", expectedList, actual)
+	return false
+}
+
+// Match checks if the actual string matches the given regular expression.
+func Match(t T, expected, actual string) bool {
+	re, err := regexp.Compile(expected)
+	if err != nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "matches", expected, err.Error())
+		return false
+	}
+	if !re.MatchString(actual) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "matches", expected, actual)
 		return false
 	}
 	return true
@@ -331,6 +357,26 @@ func IsError(t T, expected, actual error) bool {
 	return true
 }
 
+// ErrorContains check if the given error is not nil and its message
+// contains an expected string.
+func ErrorContains(t T, expected string, actual error) bool {
+	if actual == nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "error contains", expected, actual)
+		return false
+	}
+	if !strings.Contains(actual.Error(), expected) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "error contains", expected, actual.Error())
+		return false
+	}
+	return true
+}
+
 // ErrorMatch checks if the given error is not nil and its message
 // matches the expected regular expression.
 func ErrorMatch(t T, expected string, actual error) bool {
@@ -389,6 +435,84 @@ func Implements(t T, expected, actual any) bool {
 		verificationFailure(t, "does implement", expectedType, actualType)
 		return false
 	}
+	return true
+}
+
+// Assignability checks if the actual value can be assigned to the type of the
+// expected type.
+func Assignability(t T, expected, actual any) bool {
+	if expected == nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "is assignable to", "expected type", nil)
+		return false
+	}
+
+	if actual == nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "is assignable to", "actual type", nil)
+		return false
+	}
+
+	expectedType := reflect.TypeOf(expected)
+	actualType := reflect.TypeOf(actual)
+
+	if !actualType.AssignableTo(expectedType) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "is assignable to", expectedType, actualType)
+		return false
+	}
+	return true
+}
+
+// Panics checks if the given functions panics.
+func Panics(t T, fn func()) bool {
+	if fn == nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "panics", "expected function", nil)
+		return false
+	}
+
+	defer func() {
+		if r := recover(); r == nil {
+			if ht, ok := t.(testing.TB); ok {
+				ht.Helper()
+			}
+			verificationFailure(t, "panics", "expected function", "actual function")
+		}
+	}()
+
+	fn()
+	return true
+}
+
+// NotPanics checks if the given functions does not panic.
+func NotPanics(t T, fn func()) bool {
+	if fn == nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "not panics", "expected function", nil)
+		return false
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			if ht, ok := t.(testing.TB); ok {
+				ht.Helper()
+			}
+			verificationFailure(t, "not panics", "expected function", "actual function")
+		}
+	}()
+
+	fn()
 	return true
 }
 

@@ -136,6 +136,41 @@ func TestLengths(t *testing.T) {
 	verify.FailureCount(ct, 5)
 }
 
+// TestContains tests the Contains verification function.
+func TestContains(t *testing.T) {
+	// Positive test cases with regular testing.T
+	verify.Contains(t, "world", "hello world")
+	verify.Contains(t, "hello", "hello world")
+	verify.Contains(t, "", "hello world") // Empty string is contained in any string
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative test cases with continuation testing
+	verify.Contains(ct, "universe", "hello world")
+	verify.Contains(ct, "HELLO", "hello world") // Case-sensitive check
+
+	verify.FailureCount(ct, 2)
+}
+
+// TestContainsAny tests the ContainsAny verification function.
+func TestContainsAny(t *testing.T) {
+	// Positive test cases with regular testing.T
+	verify.ContainsAny(t, []string{"world", "universe"}, "hello world")
+	verify.ContainsAny(t, []string{"hello", "hi"}, "hello world")
+	verify.ContainsAny(t, []string{"planet", "world"}, "hello world")
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative test cases with continuation testing
+	verify.ContainsAny(ct, []string{"universe", "planet"}, "hello world")
+	verify.ContainsAny(ct, []string{"HELLO", "WORLD"}, "hello world") // Case-sensitive check
+	verify.ContainsAny(ct, []string{}, "hello world") // Empty slice will always fail
+
+	verify.FailureCount(ct, 3)
+}
+
 // TestMatch tests the Match function.
 func TestMatch(t *testing.T) {
 	// Positive test cases with regular testing.T
@@ -163,7 +198,7 @@ func TestTimes(t *testing.T) {
 	later := now.Add(2 * time.Hour)
 	earlier := now.Add(-2 * time.Hour)
 
-	// Positive test cases with regular testing.T
+	// Positive test cases
 	verify.Before(t, later, now)
 	verify.After(t, earlier, now)
 	verify.Between(t, earlier, later, now)
@@ -188,7 +223,7 @@ func TestDurations(t *testing.T) {
 	// Create continuation testing instance
 	ct := verify.ContinuedTesting(t)
 
-	// Negative test cases.
+	// Negative test cases with continuation testing
 	verify.Shorter(ct, time.Second, 2*time.Second)
 	verify.Longer(ct, 2*time.Second, time.Second)
 
@@ -197,7 +232,7 @@ func TestDurations(t *testing.T) {
 
 // TestRange tests the Ranges assertions.
 func TestRange(t *testing.T) {
-	// Positive test cases.
+	// Positive test cases
 	verify.InRange(t, 30, 50, 40)
 	verify.OutOfRange(t, 30, 40, 50)
 	verify.InRange(t, 3.0, 5.0, 4.0)
@@ -282,6 +317,33 @@ func TestRun(t *testing.T) {
 			verify.Equal(ct, negative.expect, negative.got)
 		}
 	})
+
+	verify.FailureCount(ct, 3)
+}
+
+// TestAssignability tests the Assignability verification function.
+func TestAssignability(t *testing.T) {
+	type tt struct {
+		A int
+		B string
+	}
+
+	var x int
+	var y string
+	var z tt
+
+	// Positive test cases with regular testing.T
+	verify.Assignability(t, x, 2)
+	verify.Assignability(t, y, "Hello, World!")
+	verify.Assignability(t, z, tt{1, "test"})
+
+	// Create continuation testing instance for negative test cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative test cases with continuation testing
+	verify.Assignability(ct, x, "Hello, World!")
+	verify.Assignability(ct, y, tt{0, "no"})
+	verify.Assignability(ct, z, "done")
 
 	verify.FailureCount(ct, 3)
 }
