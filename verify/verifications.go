@@ -21,19 +21,19 @@ import (
 )
 
 // True checks if the given value is true.
-func True(t T, actual bool) bool {
+func True(t T, actual bool, infos ...string) bool {
 	if !actual {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is true", true, actual)
+		verificationFailure(t, "is true", true, actual, infos...)
 		return false
 	}
 	return true
 }
 
 // False checks if the given value is false. It's the opposite of True.
-func False(t T, actual bool) bool {
+func False(t T, actual bool, infos ...string) bool {
 	if actual {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
@@ -45,24 +45,24 @@ func False(t T, actual bool) bool {
 }
 
 // Nil checks if the given value is nil.
-func Nil(t T, actual any) bool {
+func Nil(t T, actual any, infos ...string) bool {
 	if actual != nil {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is nil", nil, actual)
+		verificationFailure(t, "is nil", nil, actual, infos...)
 		return false
 	}
 	return true
 }
 
 // NotNil checks if the given value is not nil. It's the opposite of Nil.
-func NotNil(t T, actual any) bool {
+func NotNil(t T, actual any, infos ...string) bool {
 	if actual == nil {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is not nil", nil, actual)
+		verificationFailure(t, "is not nil", nil, actual, infos...)
 		return false
 	}
 	return true
@@ -70,12 +70,12 @@ func NotNil(t T, actual any) bool {
 
 // Equal checks if the given values are equal.
 // It uses the == operator for comparable types and supports time.Duration.
-func Equal[C comparable](t T, expected, actual C) bool {
+func Equal[C comparable](t T, expected, actual C, infos ...string) bool {
 	if expected != actual {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is equal", expected, actual)
+		verificationFailure(t, "is equal", expected, actual, infos...)
 		return false
 	}
 	return true
@@ -83,12 +83,12 @@ func Equal[C comparable](t T, expected, actual C) bool {
 
 // Different checks if the given values are different.
 // It uses the != operator for comparable types and supports time.Duration.
-func Different[C comparable](t T, expected, actual C) bool {
+func Different[C comparable](t T, expected, actual C, infos ...string) bool {
 	if expected == actual {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is different", expected, actual)
+		verificationFailure(t, "is different", expected, actual, infos...)
 		return false
 	}
 	return true
@@ -96,7 +96,7 @@ func Different[C comparable](t T, expected, actual C) bool {
 
 // Length checks if the given value has the expected length. This only
 // works for the according types for len(). All others fail.
-func Length(t T, actual any, length int) bool {
+func Length(t T, actual any, length int, infos ...string) bool {
 	rv := reflect.ValueOf(actual)
 	switch rv.Kind() {
 	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
@@ -105,14 +105,14 @@ func Length(t T, actual any, length int) bool {
 			if ht, ok := t.(testing.TB); ok {
 				ht.Helper()
 			}
-			verificationFailure(t, "has length", length, actualLength)
+			verificationFailure(t, "has length", length, actualLength, infos...)
 			return false
 		}
 	default:
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "has length", length, "not quantifiable")
+		verificationFailure(t, "has length", length, "not quantifiable", infos...)
 		return false
 	}
 	return true
@@ -120,12 +120,12 @@ func Length(t T, actual any, length int) bool {
 
 // Less checks if the actual value is less than the expected one.
 // Supports integers, floats, and time.Duration.
-func Less[C constraints.Integer | constraints.Float](t T, expected, actual C) bool {
+func Less[C constraints.Integer | constraints.Float](t T, expected, actual C, infos ...string) bool {
 	if actual >= expected {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is less", expected, actual)
+		verificationFailure(t, "is less", expected, actual, infos...)
 		return false
 	}
 	return true
@@ -133,12 +133,12 @@ func Less[C constraints.Integer | constraints.Float](t T, expected, actual C) bo
 
 // More checks if the actual value is more than the expected one.
 // Supports integers, floats, and time.Duration.
-func More[C constraints.Integer | constraints.Float](t T, expected, actual C) bool {
+func More[C constraints.Integer | constraints.Float](t T, expected, actual C, infos ...string) bool {
 	if actual <= expected {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is more", expected, actual)
+		verificationFailure(t, "is more", expected, actual, infos...)
 		return false
 	}
 	return true
@@ -146,32 +146,32 @@ func More[C constraints.Integer | constraints.Float](t T, expected, actual C) bo
 
 // AboutEqual checks if the given values are equal within a delta. Possible
 // values are integers, floats, and time.Duration.
-func AboutEqual[C constraints.Integer | constraints.Float](t T, expected, actual, delta C) bool {
+func AboutEqual[C constraints.Integer | constraints.Float](t T, expected, actual, delta C, infos ...string) bool {
 	if expected < actual-delta || expected > actual+delta {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
 		expectedDescr := fmt.Sprintf("%v' +/- '%v'", expected, delta)
-		verificationFailure(t, "is about equal", expectedDescr, actual)
+		verificationFailure(t, "is about equal", expectedDescr, actual, infos...)
 		return false
 	}
 	return true
 }
 
 // Contains check if the actual string contains the expected string.
-func Contains(t T, expected, actual string) bool {
+func Contains(t T, expected, actual string, infos ...string) bool {
 	if !strings.Contains(actual, expected) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "contains", expected, actual)
+		verificationFailure(t, "contains", expected, actual, infos...)
 		return false
 	}
 	return true
 }
 
 // ContainsAny checks if the actual string contains any of the expected strings.
-func ContainsAny(t T, expected []string, actual string) bool {
+func ContainsAny(t T, expected []string, actual string, infos ...string) bool {
 	for _, exp := range expected {
 		if strings.Contains(actual, exp) {
 			return true
@@ -181,56 +181,56 @@ func ContainsAny(t T, expected []string, actual string) bool {
 		ht.Helper()
 	}
 	expectedList := "[" + strings.Join(expected, ", ") + "]"
-	verificationFailure(t, "contains any", expectedList, actual)
+	verificationFailure(t, "contains any", expectedList, actual, infos...)
 	return false
 }
 
 // Match checks if the actual string matches the given regular expression.
-func Match(t T, expected, actual string) bool {
+func Match(t T, expected, actual string, infos ...string) bool {
 	re, err := regexp.Compile(expected)
 	if err != nil {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "matches", expected, err.Error())
+		verificationFailure(t, "matches", expected, err.Error(), infos...)
 		return false
 	}
 	if !re.MatchString(actual) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "matches", expected, actual)
+		verificationFailure(t, "matches", expected, actual, infos...)
 		return false
 	}
 	return true
 }
 
 // Before checks if the actual time is before the expected time.
-func Before(t T, expected, actual time.Time) bool {
+func Before(t T, expected, actual time.Time, infos ...string) bool {
 	if !actual.Before(expected) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is time before", ftim(expected), ftim(actual))
+		verificationFailure(t, "is time before", ftim(expected), ftim(actual), infos...)
 		return false
 	}
 	return true
 }
 
 // After checks if the actual time is after the expected time.
-func After(t T, expected, actual time.Time) bool {
+func After(t T, expected, actual time.Time, infos ...string) bool {
 	if !actual.After(expected) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is time after", ftim(expected), ftim(actual))
+		verificationFailure(t, "is time after", ftim(expected), ftim(actual), infos...)
 		return false
 	}
 	return true
 }
 
 // Between checks if the actual time is between the expected start and end times.
-func Between(t T, start, end, actual time.Time) bool {
+func Between(t T, start, end, actual time.Time, infos ...string) bool {
 	expstr := ""
 	if start.After(end) {
 		start, end = end, start
@@ -242,44 +242,44 @@ func Between(t T, start, end, actual time.Time) bool {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is between", expstr, ftim(actual))
+		verificationFailure(t, "is between", expstr, ftim(actual), infos...)
 		return false
 	}
 	return true
 }
 
 // Shorter checks if the actual duration is shorter than the expected duration.
-func Shorter(t T, expected, actual time.Duration) bool {
+func Shorter(t T, expected, actual time.Duration, infos ...string) bool {
 	if actual > expected {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "duration is shorter", expected, actual)
+		verificationFailure(t, "duration is shorter", expected, actual, infos...)
 		return false
 	}
 	return true
 }
 
 // Longer checks if the actual duration is longer than the expected duration.
-func Longer(t T, expected, actual time.Duration) bool {
+func Longer(t T, expected, actual time.Duration, infos ...string) bool {
 	if actual < expected {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "duration is longer", expected, actual)
+		verificationFailure(t, "duration is longer", expected, actual, infos...)
 		return false
 	}
 	return true
 }
 
 // DurationAboutEqual checks if the given durations are equal within a delta.
-func DurationAboutEqual(t T, expected, actual, delta time.Duration) bool {
+func DurationAboutEqual(t T, expected, actual, delta time.Duration, infos ...string) bool {
 	if expected < actual-delta || expected > actual+delta {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
 		expectedDesc := fmt.Sprintf("'%v +/- '%s'", expected, delta)
-		verificationFailure(t, "duration is about equal", expectedDesc, actual)
+		verificationFailure(t, "duration is about equal", expectedDesc, actual, infos...)
 		return false
 	}
 	return true
@@ -287,7 +287,7 @@ func DurationAboutEqual(t T, expected, actual, delta time.Duration) bool {
 
 // InRange checks if the given value is within lower and upper bounds. Possible
 // values are integers, floats, and time.Duration.
-func InRange[C constraints.Integer | constraints.Float](t T, lower, upper, actual C) bool {
+func InRange[C constraints.Integer | constraints.Float](t T, lower, upper, actual C, infos ...string) bool {
 	if lower > upper {
 		lower, upper = upper, lower
 	}
@@ -296,7 +296,7 @@ func InRange[C constraints.Integer | constraints.Float](t T, lower, upper, actua
 			ht.Helper()
 		}
 		expectedDescr := fmt.Sprintf("'%v' to '%v'", lower, upper)
-		verificationFailure(t, "is in range", expectedDescr, actual)
+		verificationFailure(t, "is in range", expectedDescr, actual, infos...)
 		return false
 	}
 	return true
@@ -304,7 +304,7 @@ func InRange[C constraints.Integer | constraints.Float](t T, lower, upper, actua
 
 // OutOfRange checks if the given value is outside lower and upper bounds. It's the
 // opposite of InRange.
-func OutOfRange[C constraints.Integer | constraints.Float](t T, lower, upper, actual C) bool {
+func OutOfRange[C constraints.Integer | constraints.Float](t T, lower, upper, actual C, infos ...string) bool {
 	if lower > upper {
 		lower, upper = upper, lower
 	}
@@ -313,7 +313,7 @@ func OutOfRange[C constraints.Integer | constraints.Float](t T, lower, upper, ac
 			ht.Helper()
 		}
 		expectedDescr := fmt.Sprintf("'%v' to '%v'", lower, upper)
-		verificationFailure(t, "is out of range", expectedDescr, actual)
+		verificationFailure(t, "is out of range", expectedDescr, actual, infos...)
 		return false
 	}
 	return true

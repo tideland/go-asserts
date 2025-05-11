@@ -10,6 +10,7 @@ package verify // import "tideland.dev/go/assert/verify"
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -88,19 +89,24 @@ func FailureCount(t T, expected int) bool {
 // -----------------------------------------------------------------------------
 
 // verificationFailure raises an error containing the failure message.
-func verificationFailure(t T, verification string, expected, got any) {
+func verificationFailure(t T, verification string, expected, got any, infos ...string) {
+	info := strings.Join(infos, ",")
+	msg := fmt.Sprintf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+	if len(info) > 0 {
+		msg = msg + " (" + info + ")"
+	}
 	if tt, ok := t.(*testing.T); ok {
 		tt.Helper()
-		tt.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+		tt.Errorf(msg)
 		tt.FailNow()
 		return
 	}
 	if ct, ok := t.(*continuedTesting); ok {
 		ct.Helper()
-		ct.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+		ct.Errorf(msg)
 		return
 	}
-	t.Errorf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+	t.Errorf(msg)
 }
 
 // -----------------------------------------------------------------------------

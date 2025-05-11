@@ -21,7 +21,6 @@ func TestVerify(t *testing.T) {
 	// t.Skip("Verification skip")
 
 	t.Log("verification test started")
-	// verify.True(t, false)
 
 	ct := verify.ContinuedTesting(t)
 
@@ -166,7 +165,7 @@ func TestContainsAny(t *testing.T) {
 	// Negative test cases with continuation testing
 	verify.ContainsAny(ct, []string{"universe", "planet"}, "hello world")
 	verify.ContainsAny(ct, []string{"HELLO", "WORLD"}, "hello world") // Case-sensitive check
-	verify.ContainsAny(ct, []string{}, "hello world") // Empty slice will always fail
+	verify.ContainsAny(ct, []string{}, "hello world")                 // Empty slice will always fail
 
 	verify.FailureCount(ct, 3)
 }
