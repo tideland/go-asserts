@@ -91,7 +91,7 @@ func FailureCount(t T, expected int) bool {
 // verificationFailure raises an error containing the failure message.
 func verificationFailure(t T, verification string, expected, got any, infos ...string) {
 	info := strings.Join(infos, ",")
-	msg := fmt.Sprintf("fail %q verification: want '%v', got '%v'", verification, expected, got)
+	msg := fmt.Sprintf("fail %q verification: got '%v', want '%v'", verification, got, expected)
 	if len(info) > 0 {
 		msg = msg + " (" + info + ")"
 	}

@@ -25,8 +25,8 @@ func TestStdout(t *testing.T) {
 	cptrd := capture.Stdout(func() {
 		fmt.Print(hello)
 	})
-	verify.Equal(t, cptrd.String(), hello)
-	verify.Equal(t, cptrd.Len(), len(hello))
+	verify.Equal(t, hello, cptrd.String())
+	verify.Equal(t, len(hello), cptrd.Len())
 }
 
 // TestStderr tests the capturing of writings to stderr.
@@ -35,8 +35,8 @@ func TestStderr(t *testing.T) {
 	cptrd := capture.Stderr(func() {
 		fmt.Fprint(os.Stderr, ouch)
 	})
-	verify.Equal(t, cptrd.String(), ouch)
-	verify.Equal(t, cptrd.Len(), len(ouch))
+	verify.Equal(t, ouch, cptrd.String())
+	verify.Equal(t, len(ouch), cptrd.Len())
 }
 
 // TestBoth tests the capturing of writings to stdout
@@ -48,10 +48,10 @@ func TestBoth(t *testing.T) {
 		fmt.Fprint(os.Stdout, hello)
 		fmt.Fprint(os.Stderr, ouch)
 	})
-	verify.Equal(t, cout.String(), hello)
-	verify.Equal(t, cout.Len(), len(hello))
-	verify.Equal(t, cerr.String(), ouch)
-	verify.Equal(t, cerr.Len(), len(ouch))
+	verify.Equal(t, hello, cout.String())
+	verify.Equal(t, len(hello), cout.Len())
+	verify.Equal(t, ouch, cerr.String())
+	verify.Equal(t, len(ouch), cerr.Len())
 }
 
 // TestBytes tests the retrieving of captures as bytes.
@@ -76,12 +76,12 @@ func TestRestore(t *testing.T) {
 		fmt.Fprint(os.Stdout, foo)
 		fmt.Fprint(os.Stderr, foo)
 	})
-	verify.Equal(t, cout.String(), foo)
-	verify.Equal(t, cout.Len(), len(foo))
-	verify.Equal(t, cerr.String(), foo)
-	verify.Equal(t, cerr.Len(), len(foo))
-	verify.Equal(t, os.Stdout, oldOut)
-	verify.Equal(t, os.Stderr, oldErr)
+	verify.Equal(t, foo, cout.String())
+	verify.Equal(t, len(foo), cout.Len())
+	verify.Equal(t, foo, cerr.String())
+	verify.Equal(t, len(foo), cerr.Len())
+	verify.Equal(t, oldOut, os.Stdout)
+	verify.Equal(t, oldErr, os.Stderr)
 }
 
 // -----------------------------------------------------------------------------
