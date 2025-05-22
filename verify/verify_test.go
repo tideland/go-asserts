@@ -265,7 +265,7 @@ func TestErrors(t *testing.T) {
 	verify.Error(t, testErr)
 	verify.NoError(t, nil)
 	verify.IsError(t, testErr, testErr)
-	verify.ErrorMatch(t, "^bo.*", testErr)
+	verify.ErrorMatch(t, testErr, "^bo.*")
 
 	// Create continuation testing instance for negative test cases
 	ct := verify.ContinuedTesting(t)
@@ -274,7 +274,7 @@ func TestErrors(t *testing.T) {
 	verify.Error(ct, nil)
 	verify.NoError(ct, testErr)
 	verify.IsError(ct, errors.New("ouch"), testErr)
-	verify.ErrorMatch(ct, ".*ou$", testErr)
+	verify.ErrorMatch(ct, testErr, ".*ou$")
 
 	verify.FailureCount(ct, 4)
 }

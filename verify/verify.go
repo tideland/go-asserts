@@ -363,7 +363,7 @@ func IsError(t T, gotten, expected error) bool {
 
 // ErrorContains check if the given error is not nil and its message
 // contains an expected string.
-func ErrorContains(t T, expected string, gotten error) bool {
+func ErrorContains(t T, gotten error, expected string) bool {
 	if gotten == nil {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
@@ -383,7 +383,7 @@ func ErrorContains(t T, expected string, gotten error) bool {
 
 // ErrorMatch checks if the gotten error is not nil and its message
 // matches the expected regular expression.
-func ErrorMatch(t T, expected string, gotten error) bool {
+func ErrorMatch(t T, gotten error, expected string) bool {
 	if gotten == nil {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
@@ -405,7 +405,7 @@ func ErrorMatch(t T, expected string, gotten error) bool {
 // Implements checks if the gotten instance implements the expected interface.
 // The expected parameter has to be an interface type as nil pointer like
 // (*fmt.Stringer)(nil) or (*io.Reader)(nil).
-func Implements(t T, expected, gotten any) bool {
+func Implements(t T, gotten, expected any) bool {
 	if expected == nil {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
@@ -444,7 +444,7 @@ func Implements(t T, expected, gotten any) bool {
 
 // Assignability checks if the actual value can be assigned to the type of the
 // expected type.
-func Assignability(t T, expected, gotten any) bool {
+func Assignability(t T, gotten, expected any) bool {
 	if expected == nil {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
