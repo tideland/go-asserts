@@ -162,17 +162,17 @@ func TestLengths(t *testing.T) {
 // TestContains tests the Contains and Substring verification functions.
 func TestContains(t *testing.T) {
 	// Positive test cases with regular testing.T
-	verify.Contains(t, []string{"hello", "world"}, "world")
-	verify.Contains(t, []string{"hello", "world"}, "hello")
-	verify.Substring(t, "hello, world", "ello")
-	verify.Substring(t, "hello, world", "")
+	verify.Contains(t, "world", []string{"hello", "world"})
+	verify.Substring(t, "ello", "hello, world")
+	verify.Contains(t, "hello", []string{"hello", "world"})
+	verify.Substring(t, "", "hello, world")
 
 	// Create continuation testing instance for negative test cases
 	ct := verify.ContinuedTesting(t)
 
 	// Negative test cases with continuation testing
-	verify.Contains(ct, []string{"hello", "world"}, "universe")
-	verify.Contains(ct, []string{"hello", "world"}, "HELLO")
+	verify.Contains(ct, "universe", []string{"hello", "world"})
+	verify.Contains(ct, "HELLO", []string{"hello", "world"})
 	verify.Substring(ct, "hello, world", "HELLO")
 
 	verify.FailureCount(ct, 3)

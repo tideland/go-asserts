@@ -210,7 +210,7 @@ func About[C constraints.Integer | constraints.Float](t T, gotten, expected, tol
 }
 
 // Substring checks if the gotten string is a substring of the expected string.
-func Substring(t T, expected, gotten string, infos ...string) bool {
+func Substring(t T, gotten, expected string, infos ...string) bool {
 	if !strings.Contains(expected, gotten) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
@@ -222,7 +222,7 @@ func Substring(t T, expected, gotten string, infos ...string) bool {
 }
 
 // Contains checks if the slice contains the expected element.
-func Contains[S ~[]E, E comparable](t T, expected S, gotten E, infos ...string) bool {
+func Contains[S ~[]E, E comparable](t T, gotten E, expected S, infos ...string) bool {
 	if !slices.Contains(expected, gotten) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
@@ -338,7 +338,7 @@ func InRange[C constraints.Integer | constraints.Float](t T, gotten, expectedLow
 	if expectedLower > expectedUpper {
 		expectedLower, expectedUpper = expectedUpper, expectedLower
 	}
-	if gotten <= expectedLower || gotten >= expectedUpper {
+	if gotten < expectedLower || gotten > expectedUpper {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
