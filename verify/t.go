@@ -97,16 +97,16 @@ func verificationFailure(t T, verification string, expected, got any, infos ...s
 	}
 	if tt, ok := t.(*testing.T); ok {
 		tt.Helper()
-		tt.Errorf(msg)
+		tt.Errorf("%s", msg)
 		tt.FailNow()
 		return
 	}
 	if ct, ok := t.(*continuedTesting); ok {
 		ct.Helper()
-		ct.Errorf(msg)
+		ct.Errorf("%s", msg)
 		return
 	}
-	t.Errorf(msg)
+	t.Errorf("%s", msg)
 }
 
 // -----------------------------------------------------------------------------

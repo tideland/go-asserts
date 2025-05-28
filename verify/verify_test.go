@@ -10,6 +10,7 @@ package verify_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -94,8 +95,8 @@ func TestComparisons(t *testing.T) {
 	verify.Less(t, 5.0, 10.0)
 	verify.More(t, 10, 5)
 	verify.More(t, 10.0, 5.0)
-	verify.AboutEqual(t, 45, 43, 5)
-	verify.AboutEqual(t, 4.5, 4.3, 0.3)
+	verify.About(t, 45, 43, 5)
+	verify.About(t, 4.5, 4.3, 0.3)
 
 	// Create continuation testing instance for negative test cases
 	ct := verify.ContinuedTesting(t)
@@ -109,13 +110,13 @@ func TestComparisons(t *testing.T) {
 	verify.Less(ct, 10.0, 5.0)
 	verify.More(ct, 5, 10)
 	verify.More(ct, 5.0, 10.0)
-	verify.AboutEqual(ct, 45, 43, 1)
-	verify.AboutEqual(ct, 4.5, 4.3, 0.1)
+	verify.About(ct, 45, 43, 1)
+	verify.About(ct, 4.5, 4.3, 0.1)
 
 	verify.FailureCount(ct, 10)
 }
 
-// TestLengths tests the Length verification function.
+// TestLengths tests the Length, Empty, and NotEmpty verification functions.
 func TestLengths(t *testing.T) {
 	// Positive test cases with regular testing.T
 	verify.Length(t, []int{1, 2, 3}, 3)
@@ -123,6 +124,15 @@ func TestLengths(t *testing.T) {
 	verify.Length(t, map[string]int{"a": 1, "b": 2}, 2)
 	verify.Length(t, [2]bool{true, false}, 2)
 	verify.Length(t, make(chan int, 5), 0)
+
+	// Positive test cases for Empty and NotEmpty
+	verify.Empty(t, []int{})
+	verify.Empty(t, "")
+	verify.Empty(t, map[string]int{})
+	verify.Empty(t, make(chan int, 5))
+	verify.NotEmpty(t, []int{1, 2, 3})
+	verify.NotEmpty(t, "hello")
+	verify.NotEmpty(t, map[string]int{"a": 1, "b": 2})
 
 	// Create continuation testing instance for negative test cases
 	ct := verify.ContinuedTesting(t)
@@ -133,43 +143,37 @@ func TestLengths(t *testing.T) {
 	verify.Length(ct, map[string]int{"a": 1, "b": 2}, 3)
 	verify.Length(ct, [2]bool{true, false}, 1)
 
+	// Negative test cases for Empty and NotEmpty
+	verify.Empty(ct, []int{1, 2, 3})
+	verify.Empty(ct, "hello")
+	verify.Empty(ct, map[string]int{"a": 1})
+	verify.NotEmpty(ct, []int{})
+	verify.NotEmpty(ct, "")
+	verify.NotEmpty(ct, map[string]int{})
+
 	// Invalid type test case
 	verify.Length(ct, 42, 0)
+	verify.Empty(ct, 42)
+	verify.NotEmpty(ct, 42)
 
-	verify.FailureCount(ct, 5)
+	verify.FailureCount(ct, 13)
 }
 
-// TestContains tests the Contains verification function.
+// TestContains tests the Contains and Substring verification functions.
 func TestContains(t *testing.T) {
 	// Positive test cases with regular testing.T
-	verify.Contains(t, "hello world", "world")
-	verify.Contains(t, "hello world", "hello")
-	verify.Contains(t, "hello world", "") // Empty string is contained in any string
+	verify.Contains(t, []string{"hello", "world"}, "world")
+	verify.Contains(t, []string{"hello", "world"}, "hello")
+	verify.Substring(t, "hello, world", "ello")
+	verify.Substring(t, "hello, world", "")
 
 	// Create continuation testing instance for negative test cases
 	ct := verify.ContinuedTesting(t)
 
 	// Negative test cases with continuation testing
-	verify.Contains(ct, "hello world", "universe")
-	verify.Contains(ct, "hello world", "HELLO") // Case-sensitive check
-
-	verify.FailureCount(ct, 2)
-}
-
-// TestContainsAny tests the ContainsAny verification function.
-func TestContainsAny(t *testing.T) {
-	// Positive test cases with regular testing.T
-	verify.ContainsAny(t, "hello world", []string{"world", "universe"})
-	verify.ContainsAny(t, "hello world", []string{"hello", "hi"})
-	verify.ContainsAny(t, "hello world", []string{"planet", "world"})
-
-	// Create continuation testing instance for negative test cases
-	ct := verify.ContinuedTesting(t)
-
-	// Negative test cases with continuation testing
-	verify.ContainsAny(ct, "hello world", []string{"universe", "planet"})
-	verify.ContainsAny(ct, "hello world", []string{"HELLO", "WORLD"}) // Case-sensitive check
-	verify.ContainsAny(ct, "hello world", []string{})                 // Empty slice will always fail
+	verify.Contains(ct, []string{"hello", "world"}, "universe")
+	verify.Contains(ct, []string{"hello", "world"}, "HELLO")
+	verify.Substring(ct, "hello, world", "HELLO")
 
 	verify.FailureCount(ct, 3)
 }
@@ -202,6 +206,7 @@ func TestTimes(t *testing.T) {
 	earlier := now.Add(-2 * time.Hour)
 
 	// Positive test cases
+	verify.Simultaneous(t, now, now)
 	verify.Before(t, now, later)
 	verify.After(t, now, earlier)
 	verify.Between(t, now, earlier, later)
@@ -210,11 +215,12 @@ func TestTimes(t *testing.T) {
 	ct := verify.ContinuedTesting(t)
 
 	// Negative test cases with continuation testing
+	verify.Simultaneous(ct, now, later)
 	verify.Before(ct, now, earlier)
 	verify.After(ct, now, later)
 	verify.Between(ct, now.Add(5*time.Hour), later, earlier)
 
-	verify.FailureCount(ct, 3)
+	verify.FailureCount(ct, 4)
 }
 
 // TestDuration tests the Duration verification function.
@@ -222,6 +228,7 @@ func TestDurations(t *testing.T) {
 	// Positive test cases.
 	verify.Shorter(t, time.Second, 2*time.Second)
 	verify.Longer(t, 2*time.Second, time.Second)
+	verify.About(t, 5*time.Second, 4*time.Second, 2*time.Second)
 
 	// Create continuation testing instance
 	ct := verify.ContinuedTesting(t)
@@ -229,8 +236,9 @@ func TestDurations(t *testing.T) {
 	// Negative test cases with continuation testing
 	verify.Shorter(ct, 2*time.Second, time.Second)
 	verify.Longer(ct, time.Second, 2*time.Second)
+	verify.About(ct, 2*time.Second, 5*time.Second, 500*time.Millisecond)
 
-	verify.FailureCount(ct, 2)
+	verify.FailureCount(ct, 3)
 }
 
 // TestRange tests the Ranges assertions.
@@ -257,15 +265,43 @@ func TestRange(t *testing.T) {
 	verify.FailureCount(ct, 6)
 }
 
+// Define custom error types for AsError testing
+type customError struct {
+	msg string
+}
+
+func (e customError) Error() string {
+	return e.msg
+}
+
+type anotherError struct {
+	code int
+}
+
+func (e anotherError) Error() string {
+	return "another error"
+}
+
 // TestErrors tests the Error verification functions.
 func TestErrors(t *testing.T) {
 	testErr := errors.New("booom")
+
+	customErr := customError{msg: "custom error"}
+	wrappedErr := fmt.Errorf("wrapped: %w", customErr)
+	doubleWrappedErr := fmt.Errorf("double wrapped: %w", wrappedErr)
 
 	// Positive test cases with regular testing.T
 	verify.Error(t, testErr)
 	verify.NoError(t, nil)
 	verify.IsError(t, testErr, testErr)
 	verify.ErrorMatch(t, testErr, "^bo.*")
+
+	// Test AsError with custom error types
+	var targetCustom customError
+	verify.AsError(t, customErr, &targetCustom)
+
+	// Test UnwrapError
+	verify.UnwrapError(t, wrappedErr, customErr)
 
 	// Create continuation testing instance for negative test cases
 	ct := verify.ContinuedTesting(t)
@@ -276,7 +312,17 @@ func TestErrors(t *testing.T) {
 	verify.IsError(ct, errors.New("ouch"), testErr)
 	verify.ErrorMatch(ct, testErr, ".*ou$")
 
-	verify.FailureCount(ct, 4)
+	// Test AsError negative cases
+	var targetAnother anotherError
+	verify.AsError(ct, customErr, &targetAnother) // wrong type
+	verify.AsError(ct, nil, &targetCustom)        // nil error
+
+	// Test UnwrapError negative cases
+	verify.UnwrapError(ct, customErr, testErr)        // doesn't unwrap to expected
+	verify.UnwrapError(ct, nil, testErr)              // nil error
+	verify.UnwrapError(ct, doubleWrappedErr, testErr) // unwraps to wrong error
+
+	verify.FailureCount(ct, 9)
 }
 
 // TestRun tests the Run function.

@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -100,23 +101,69 @@ func Different[C comparable](t T, gotten, expected C, infos ...string) bool {
 
 // Length checks if the given value has the expected length. This only
 // works for the according types for len(). All others fail.
-func Length(t T, gotten any, length int, infos ...string) bool {
-	rv := reflect.ValueOf(gotten)
-	switch rv.Kind() {
-	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
-		actualLength := rv.Len()
-		if actualLength != length {
-			if ht, ok := t.(testing.TB); ok {
-				ht.Helper()
-			}
-			verificationFailure(t, "has length", length, actualLength, infos...)
-			return false
-		}
-	default:
+func Length(t T, gotten any, expected int, infos ...string) bool {
+	if expected < 0 {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "has length", length, "not quantifiable", infos...)
+		verificationFailure(t, "has length", expected, "not quantifiable", infos...)
+		return false
+	}
+	gottenLen := flexlen(gotten)
+	if gottenLen < 0 {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "has length", expected, "gotten not quantifiable", infos...)
+		return false
+	}
+	if gottenLen != expected {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "has length", expected, gottenLen, infos...)
+		return false
+	}
+	return true
+}
+
+// Empty checks if the given value is empty. This only works for the according types for len().
+// All others fail.
+func Empty(t T, gotten any, infos ...string) bool {
+	gottenLen := flexlen(gotten)
+	if gottenLen < 0 {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "empty", 0, "gotten not quantifiable", infos...)
+		return false
+	}
+	if gottenLen != 0 {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "empty", 0, gottenLen, infos...)
+		return false
+	}
+	return true
+}
+
+// NotEmpty checks if the given value is not empty. This only works for the according types for len().
+// All others fail.
+func NotEmpty(t T, gotten any, infos ...string) bool {
+	gottenLen := flexlen(gotten)
+	if gottenLen < 0 {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "not empty", 0, "gotten not quantifiable", infos...)
+		return false
+	}
+	if gottenLen == 0 {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "not empty", "> 0", gottenLen, infos...)
 		return false
 	}
 	return true
@@ -148,23 +195,35 @@ func More[C constraints.Integer | constraints.Float](t T, gotten, expected C, in
 	return true
 }
 
-// AboutEqual checks if the gotten values equal within a expected delta. Possible
+// About checks if the gotten values equal within a expected delta. Possible
 // values are integers, floats, and time.Duration.
-func AboutEqual[C constraints.Integer | constraints.Float](t T, gotten, expected, delta C, infos ...string) bool {
-	if gotten < expected-delta || gotten > expected+delta {
+func About[C constraints.Integer | constraints.Float](t T, gotten, expected, tolerance C, infos ...string) bool {
+	if gotten < expected-tolerance || gotten > expected+tolerance {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		expectedDescr := fmt.Sprintf("%v' +/- '%v'", expected, delta)
+		expectedDescr := fmt.Sprintf("%v' +/- '%v'", expected, tolerance)
 		verificationFailure(t, "is about equal", expectedDescr, gotten, infos...)
 		return false
 	}
 	return true
 }
 
-// Contains check if the gotten string contains the expected string.
-func Contains(t T, gotten, expected string, infos ...string) bool {
-	if !strings.Contains(gotten, expected) {
+// Substring checks if the gotten string is a substring of the expected string.
+func Substring(t T, expected, gotten string, infos ...string) bool {
+	if !strings.Contains(expected, gotten) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "substring", expected, gotten, infos...)
+		return false
+	}
+	return true
+}
+
+// Contains checks if the slice contains the expected element.
+func Contains[S ~[]E, E comparable](t T, expected S, gotten E, infos ...string) bool {
+	if !slices.Contains(expected, gotten) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
@@ -172,21 +231,6 @@ func Contains(t T, gotten, expected string, infos ...string) bool {
 		return false
 	}
 	return true
-}
-
-// ContainsAny checks if the gotten string contains any of the expected strings.
-func ContainsAny(t T, gotten string, expected []string, infos ...string) bool {
-	for _, exp := range expected {
-		if strings.Contains(gotten, exp) {
-			return true
-		}
-	}
-	if ht, ok := t.(testing.TB); ok {
-		ht.Helper()
-	}
-	expectedList := "[" + strings.Join(expected, ", ") + "]"
-	verificationFailure(t, "contains any", expectedList, gotten, infos...)
-	return false
 }
 
 // Match checks if the gotten string matches the expected regular expression.
@@ -204,6 +248,18 @@ func Match(t T, gotten, expected string, infos ...string) bool {
 			ht.Helper()
 		}
 		verificationFailure(t, "matches", expected, gotten, infos...)
+		return false
+	}
+	return true
+}
+
+// Simultaneous checks if the gotten time is simultaneous with the expected time.
+func Simultaneous(t T, gotten, expected time.Time, infos ...string) bool {
+	if !gotten.Equal(expected) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "is time simultaneous", ftim(expected), ftim(gotten), infos...)
 		return false
 	}
 	return true
@@ -276,19 +332,6 @@ func Longer(t T, gotten, expected time.Duration, infos ...string) bool {
 	return true
 }
 
-// DurationAboutEqual checks if the given durations are equal within a delta.
-func DurationAboutEqual(t T, gotten, expected, delta time.Duration, infos ...string) bool {
-	if gotten < expected-delta || gotten > expected+delta {
-		if ht, ok := t.(testing.TB); ok {
-			ht.Helper()
-		}
-		expectedDesc := fmt.Sprintf("'%v +/- '%s'", expected, delta)
-		verificationFailure(t, "duration is about equal", expectedDesc, gotten, infos...)
-		return false
-	}
-	return true
-}
-
 // InRange checks if the given value is within lower and upper bounds. Possible
 // values are integers, floats, and time.Duration.
 func InRange[C constraints.Integer | constraints.Float](t T, gotten, expectedLower, expectedUpper C, infos ...string) bool {
@@ -351,11 +394,53 @@ func NoError(t T, gotten error) bool {
 // IsError checks if the given error is not nil and of the expected type.
 // It uses the errors.Is() function.
 func IsError(t T, gotten, expected error) bool {
-	if !errors.Is(expected, gotten) {
+	if !errors.Is(gotten, expected) {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
 		verificationFailure(t, "is expected error", expected, gotten)
+		return false
+	}
+	return true
+}
+
+// AsError checks if the given error can be unwrapped to the expected error type.
+// It uses the errors.As() function. The expected parameter should be a pointer
+// to the error type you want to check for.
+func AsError(t T, gotten error, expected any) bool {
+	if gotten == nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "error as type", expected, gotten)
+		return false
+	}
+	if !errors.As(gotten, expected) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "error as type", expected, gotten)
+		return false
+	}
+	return true
+}
+
+// UnwrapError checks if the given error unwraps to the expected error.
+// It uses the errors.Unwrap() function.
+func UnwrapError(t T, gotten, expected error) bool {
+	if gotten == nil {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "error unwraps to", expected, gotten)
+		return false
+	}
+	unwrapped := errors.Unwrap(gotten)
+	if !errors.Is(unwrapped, expected) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "error unwraps to", expected, unwrapped)
 		return false
 	}
 	return true
@@ -403,8 +488,8 @@ func ErrorMatch(t T, gotten error, expected string) bool {
 }
 
 // Implements checks if the gotten instance implements the expected interface.
-// The expected parameter has to be an interface type as nil pointer like
-// (*fmt.Stringer)(nil) or (*io.Reader)(nil).
+// The expected parameter has to be an interface type as nil pointer. Hier e.g.
+// var stringer fmt.Stinger and then verify.Implements(t, myVar, &fmtStringer).
 func Implements(t T, gotten, expected any) bool {
 	if expected == nil {
 		if ht, ok := t.(testing.TB); ok {
@@ -527,6 +612,33 @@ func NotPanics(t T, gotten func()) bool {
 // ftim is a short to format times in test output.
 func ftim(t time.Time) string {
 	return t.Format(time.RFC3339)
+}
+
+type lenner interface {
+	Len() int
+}
+
+type lengthier interface {
+	Length() int
+}
+
+// flexlen retruns the length of types avaialbe to return their length.
+func flexlen(in any) int {
+	// Check for possible existing methods
+	switch in.(type) {
+	case lenner:
+		return in.(lenner).Len()
+	case lengthier:
+		return in.(lengthier).Length()
+	}
+	// Use reflection
+	rv := reflect.ValueOf(in)
+	switch rv.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		return rv.Len()
+	}
+	// Good old -1 is enough here, verification is above
+	return -1
 }
 
 // -----------------------------------------------------------------------------
