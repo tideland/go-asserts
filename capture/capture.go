@@ -6,7 +6,7 @@
 // Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
-package capture // "tideland.dev/go/asserts/capture"
+package capture
 
 import (
 	"bytes"

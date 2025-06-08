@@ -1,12 +1,10 @@
-// -----------------------------------------------------------------------------
 // Convenient verification of unit tests in Go libraries and applications.
 //
 // Replacement of testing.T to allow teest without immediate fail
 //
 // Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
-// -----------------------------------------------------------------------------
 
-package verify // import "tideland.dev/go/assert/verify"
+package verify
 
 import (
 	"fmt"

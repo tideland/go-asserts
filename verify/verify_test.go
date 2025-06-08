@@ -1,10 +1,8 @@
-// -----------------------------------------------------------------------------
 // Convenient verification of unit tests in Go libraries and applications.
 //
 // Unit tests
 //
 // Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
-// -----------------------------------------------------------------------------
 
 package verify_test
 
@@ -416,6 +414,4 @@ func TestIsContinue(t *testing.T) {
 	verify.FailureCount(ct, 0)
 }
 
-// -----------------------------------------------------------------------------
 // EOF
-// -----------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 // Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
 // -----------------------------------------------------------------------------
 
-package generators // import "tideland.dev/go/assert/generators"
+package generators
 
 //--------------------
 // IMPORTS

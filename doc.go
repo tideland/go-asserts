@@ -9,7 +9,7 @@
 // continue the verification even when an expected failure happens. In the end the
 // number of expected fails may be checked.
 
-package asserts // import "tideland.dev/go/asserts"
+package asserts
 
 // -----------------------------------------------------------------------------
 // EOF
