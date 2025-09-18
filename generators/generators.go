@@ -151,7 +151,7 @@ func (g *Generator) Byte(lo, hi byte) byte {
 // Bytes generates a slice of random bytes.
 func (g *Generator) Bytes(lo, hi byte, count int) []byte {
 	bytes := make([]byte, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		bytes[i] = g.Byte(lo, hi)
 	}
 	return bytes
@@ -179,7 +179,7 @@ func (g *Generator) Int(lo, hi int) int {
 // Ints generates a slice of random ints.
 func (g *Generator) Ints(lo, hi, count int) []int {
 	ints := make([]int, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		ints[i] = g.Int(lo, hi)
 	}
 	return ints
@@ -190,9 +190,7 @@ func (g *Generator) Ints(lo, hi, count int) []int {
 func (g *Generator) UUID() [16]byte {
 	var uuid [16]byte
 	bytes := g.Bytes(0, 255, 16)
-	for i, b := range bytes {
-		uuid[i] = b
-	}
+	copy(uuid[:], bytes)
 	return uuid
 }
 
@@ -273,7 +271,7 @@ func (g *Generator) Word() string {
 // Words generates a slice of random words
 func (g *Generator) Words(count int) []string {
 	words := make([]string, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		words[i] = g.Word()
 	}
 	return words
@@ -282,13 +280,7 @@ func (g *Generator) Words(count int) []string {
 // LimitedWord generates a random word with a length between
 // lo and hi.
 func (g *Generator) LimitedWord(lo, hi int) string {
-	length := g.Int(lo, hi)
-	if length < MinWordLen {
-		length = MinWordLen
-	}
-	if length > MaxWordLen {
-		length = MaxWordLen
-	}
+	length := max(g.Int(lo, hi), MinWordLen)
 	// Start anywhere in the list.
 	pos := g.Int(0, wordsLen)
 	for {
@@ -381,7 +373,7 @@ func (g *Generator) SentenceWithNames(names []string) string {
 func (g *Generator) Paragraph() string {
 	count := g.Int(2, 10)
 	sentences := make([]string, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		sentences[i] = g.Sentence()
 	}
 	return strings.Join(sentences, " ")
@@ -392,7 +384,7 @@ func (g *Generator) Paragraph() string {
 func (g *Generator) ParagraphWithNames(names []string) string {
 	count := g.Int(2, 10)
 	sentences := make([]string, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		sentences[i] = g.SentenceWithNames(names)
 	}
 	return strings.Join(sentences, " ")
@@ -410,7 +402,7 @@ func (g *Generator) Name() (first, middle, last string) {
 // Names generates a set of names to be used in other generators.
 func (g *Generator) Names(count int) []string {
 	var names []string
-	for i := 0; i < count; i++ {
+	for range count {
 		first, middle, last := g.Name()
 		if g.FlipCoin(50) {
 			names = append(names, first+" "+string(middle[0])+". "+last)

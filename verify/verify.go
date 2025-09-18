@@ -623,20 +623,22 @@ type lengthier interface {
 // flexlen retruns the length of types avaialbe to return their length.
 func flexlen(in any) int {
 	// Check for possible existing methods
-	switch in.(type) {
+	switch in := in.(type) {
 	case lenner:
-		return in.(lenner).Len()
+		return in.Len()
 	case lengthier:
-		return in.(lengthier).Length()
+		return in.Length()
+	default:
+		// Use reflection
+		rv := reflect.ValueOf(in)
+		switch rv.Kind() {
+		case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+			return rv.Len()
+		default:
+			// Good old -1 is enough here, verification is above
+			return -1
+		}
 	}
-	// Use reflection
-	rv := reflect.ValueOf(in)
-	switch rv.Kind() {
-	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
-		return rv.Len()
-	}
-	// Good old -1 is enough here, verification is above
-	return -1
 }
 
 // -----------------------------------------------------------------------------
