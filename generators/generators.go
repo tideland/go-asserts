@@ -1,16 +1,11 @@
-// -----------------------------------------------------------------------------
-// Convenient verification of unit tests in Go libraries and applications.
+// Tideland Go Asserts - Generators
 //
-// A set of individual verifications
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
-// -----------------------------------------------------------------------------
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
 
 package generators
-
-//--------------------
-// IMPORTS
-//--------------------
 
 import (
 	"fmt"
@@ -21,10 +16,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 )
-
-//--------------------
-// CONSTANTS
-//--------------------
 
 // patterns is used by the pattern generator and contains the
 // runes for a defined pattern identifier.
@@ -44,10 +35,6 @@ var patterns = map[rune]string{
 	'z': "abcdefghijklmnopqrstuvwxyz0123456789",
 	'Z': "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
 }
-
-//--------------------
-// HELPERS
-//--------------------
 
 // SimpleRand returns a random number generator with a source using
 // the the current time as seed. It's not the best random, but ok to
@@ -108,14 +95,9 @@ func BuildTime(layout string, offset time.Duration) (string, time.Time) {
 	return ts, tp
 }
 
-// UUIDString creates a formatted string out of a generated pseudo UUID.
 func UUIDString(uuid [16]byte) string {
 	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:16])
 }
-
-//--------------------
-// GENERATOR
-//--------------------
 
 // Generator is responsible for generating different random data
 // based on a random number generator.
@@ -185,7 +167,6 @@ func (g *Generator) Ints(lo, hi, count int) []int {
 	return ints
 }
 
-// UUID generates a 16 byte long random byte array. So it's
 // no real UUID, even no v4, but it looks like.
 func (g *Generator) UUID() [16]byte {
 	var uuid [16]byte
@@ -450,7 +431,6 @@ func (g *Generator) Domain() string {
 	return g.LimitedWord(3, 10) + "." + tld
 }
 
-// URL generates a http, https or ftp URL, some of the leading
 // to a file.
 func (g *Generator) URL() string {
 	part := func() string {
@@ -469,7 +449,6 @@ func (g *Generator) URL() string {
 	}
 }
 
-// EMail returns a random e-mail address.
 func (g *Generator) EMail() string {
 	if g.FlipCoin(50) {
 		first, _, last := g.MaleName()
@@ -509,10 +488,6 @@ func (g *Generator) Time(loc *time.Location, base time.Time, dur time.Duration) 
 	base = base.UTC()
 	return base.Add(g.Duration(0, dur)).In(loc)
 }
-
-//--------------------
-// GENERATOR DATA
-//--------------------
 
 // words is a list of words based on lorem ipsum and own extensions.
 var words = []string{
@@ -708,5 +683,3 @@ var topLevelDomains = []string{"art", "asia", "at", "au", "biz", "ch", "cn", "co
 	"eu", "fr", "gr", "guru", "info", "it", "mobi", "name", "net", "online", "org", "pl", "ru",
 	"tel", "tv", "uk", "us",
 }
-
-// EOF

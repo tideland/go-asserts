@@ -1,8 +1,9 @@
-// Convenient verification of unit tests in Go libraries and applications.
+// Tideland Go Asserts - Verify
 //
-// Replacement of testing.T to allow teest without immediate fail
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
 
 package verify
 
@@ -12,9 +13,7 @@ import (
 	"testing"
 )
 
-// -----------------------------------------------------------------------------
 // testing.T Replacement
-// -----------------------------------------------------------------------------
 
 // T replaces testing.T for tests. Missing methods are handled internally.
 type T interface {
@@ -46,9 +45,7 @@ func (ct *continuedTesting) Errorf(format string, args ...any) {
 	ct.msgs = nil
 }
 
-// -----------------------------------------------------------------------------
 // Library API
-// -----------------------------------------------------------------------------
 
 // ContinuedTesting creates a new T instance that continues after
 // testing failures.
@@ -82,9 +79,7 @@ func FailureCount(t T, expected int) bool {
 	return true
 }
 
-// -----------------------------------------------------------------------------
 // UTILS
-// -----------------------------------------------------------------------------
 
 // verificationFailure raises an error containing the failure message.
 func verificationFailure(t T, verification string, expected, got any, infos ...string) {
@@ -107,6 +102,3 @@ func verificationFailure(t T, verification string, expected, got any, infos ...s
 	t.Errorf("%s", msg)
 }
 
-// -----------------------------------------------------------------------------
-// EOF
-// -----------------------------------------------------------------------------

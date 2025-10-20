@@ -1,10 +1,9 @@
-// -----------------------------------------------------------------------------
-// Asserts for a more convenient testing in Go libraries and applications.
+// Tideland Go Asserts - Capture - Unit Tests
 //
-// Unit tests
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
-// -----------------------------------------------------------------------------
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
 
 package capture_test
 
@@ -84,6 +83,3 @@ func TestRestore(t *testing.T) {
 	verify.Equal(t, oldErr, os.Stderr)
 }
 
-// -----------------------------------------------------------------------------
-// EOF
-// -----------------------------------------------------------------------------

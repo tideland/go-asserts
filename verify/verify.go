@@ -1,8 +1,9 @@
-// Convenient verification of unit tests in Go libraries and applications.
+// Tideland Go Asserts - Verify
 //
-// A set of individual verifications
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
 
 package verify
 
@@ -19,9 +20,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-// -----------------------------------------------------------------------------
 // Verifications
-// -----------------------------------------------------------------------------
 
 // True checks if the given value is true.
 func True(t T, gotten bool, infos ...string) bool {
@@ -603,9 +602,7 @@ func NotPanics(t T, gotten func()) bool {
 	return true
 }
 
-// -----------------------------------------------------------------------------
 // Helper
-// -----------------------------------------------------------------------------
 
 // ftim is a short to format times in test output.
 func ftim(t time.Time) string {
@@ -641,6 +638,3 @@ func flexlen(in any) int {
 	}
 }
 
-// -----------------------------------------------------------------------------
-// EOF
-// -----------------------------------------------------------------------------

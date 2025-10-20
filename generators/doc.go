@@ -1,6 +1,6 @@
 // Tideland Go Audit - Generators
 //
-// Copyright (C) 2025 Frank Mueller / Tideland / Oldenburg / Germany
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
 // All rights reserved. Use of this source code is governed
 // by the new BSD license.
@@ -11,4 +11,3 @@
 // tests. So generators.FixedRand() delivers such a fixed value.
 package generators
 
-// EOF

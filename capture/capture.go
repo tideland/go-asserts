@@ -1,10 +1,9 @@
-// -----------------------------------------------------------------------------
-// Asserts for a more convenient testing in Go libraries and applications.
+// Tideland Go Asserts - Capture
 //
-// Allow to capturing of stdout and stderr
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
-// -----------------------------------------------------------------------------
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
 
 package capture
 
@@ -105,6 +104,3 @@ func Both(f func()) (Captured, Captured) {
 	return cout, cerr
 }
 
-// -----------------------------------------------------------------------------
-// EOF
-// -----------------------------------------------------------------------------

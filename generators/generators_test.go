@@ -1,16 +1,11 @@
-// -----------------------------------------------------------------------------
-// Convenient verification of unit tests in Go libraries and applications.
+// Tideland Go Asserts - Generators - Unit Tests
 //
-// A set of individual verifications
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
-// -----------------------------------------------------------------------------
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
 
 package generators_test
-
-//--------------------
-// IMPORTS
-//--------------------
 
 import (
 	"fmt"
@@ -22,10 +17,6 @@ import (
 
 	"tideland.dev/go/asserts/generators"
 )
-
-//--------------------
-// TESTS
-//--------------------
 
 // TestBuildDate tests the generation of dates.
 func TestBuildDate(t *testing.T) {
@@ -382,10 +373,4 @@ func TestConcurrency(t *testing.T) {
 	time.Sleep(3 * time.Second)
 }
 
-//--------------------
-// HELPER
-//--------------------
-
 var info = fmt.Sprintf
-
-// EOF

@@ -1,8 +1,9 @@
-// Convenient verification of unit tests in Go libraries and applications.
+// Tideland Go Asserts - Verify - Unit Tests
 //
-// Unit tests
+// Copyright (C) 2024-2025 Frank Mueller / Tideland / Germany
 //
-// Copyright (C) 2024-2025 Frank Mueller / Oldenburg / Germany / Earth
+// All rights reserved. Use of this source code is governed
+// by the new BSD license.
 
 package verify_test
 
@@ -15,9 +16,7 @@ import (
 	"tideland.dev/go/asserts/verify"
 )
 
-// -----------------------------------------------------------------------------
 // Tests
-// -----------------------------------------------------------------------------
 
 // TestVerify ensures the correct error handling of the package.
 func TestVerify(t *testing.T) {
@@ -414,4 +413,3 @@ func TestIsContinue(t *testing.T) {
 	verify.FailureCount(ct, 0)
 }
 
-// EOF
