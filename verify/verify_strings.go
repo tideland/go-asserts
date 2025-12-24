@@ -144,3 +144,39 @@ type lenner interface {
 type lengthier interface {
 	Length() int
 }
+
+// HasPrefix checks if the gotten string has the expected prefix.
+func HasPrefix(t T, gotten, expected string, infos ...string) bool {
+	if !strings.HasPrefix(gotten, expected) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "has prefix", expected, gotten, infos...)
+		return false
+	}
+	return true
+}
+
+// HasSuffix checks if the gotten string has the expected suffix.
+func HasSuffix(t T, gotten, expected string, infos ...string) bool {
+	if !strings.HasSuffix(gotten, expected) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "has suffix", expected, gotten, infos...)
+		return false
+	}
+	return true
+}
+
+// ContainsIgnoreCase checks if the haystack string contains the needle string (case-insensitive).
+func ContainsIgnoreCase(t T, haystack, needle string, infos ...string) bool {
+	if !strings.Contains(strings.ToLower(haystack), strings.ToLower(needle)) {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "contains (case-insensitive)", needle, haystack, infos...)
+		return false
+	}
+	return true
+}

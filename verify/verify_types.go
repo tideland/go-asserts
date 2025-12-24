@@ -140,3 +140,97 @@ func NotPanics(t T, gotten func()) bool {
 
 	return !panicked
 }
+
+// DeepEqual checks if the gotten and expected values are deeply equal using reflection.
+// This is useful for comparing complex structures, slices, maps, etc.
+func DeepEqual(t T, gotten, expected any, infos ...string) bool {
+	if ht, ok := t.(testing.TB); ok {
+		ht.Helper()
+	}
+
+	if !reflect.DeepEqual(gotten, expected) {
+		verificationFailure(t, "is deeply equal", expected, gotten, infos...)
+		return false
+	}
+	return true
+}
+
+// SameType checks if the gotten and expected values have the same type.
+func SameType(t T, gotten, expected any, infos ...string) bool {
+	if ht, ok := t.(testing.TB); ok {
+		ht.Helper()
+	}
+
+	gottenType := reflect.TypeOf(gotten)
+	expectedType := reflect.TypeOf(expected)
+
+	if gottenType != expectedType {
+		verificationFailure(t, "is same type", expectedType, gottenType, infos...)
+		return false
+	}
+	return true
+}
+
+// SamePointer checks if the gotten and expected values point to the same memory address.
+// Both values must be pointers, slices, maps, channels, or functions.
+func SamePointer(t T, gotten, expected any, infos ...string) bool {
+	if ht, ok := t.(testing.TB); ok {
+		ht.Helper()
+	}
+
+	gottenVal := reflect.ValueOf(gotten)
+	expectedVal := reflect.ValueOf(expected)
+
+	// Check if both are valid pointer-like types
+	if !isPointerLike(gottenVal) {
+		verificationFailure(t, "same pointer", "pointer-like type", "non-pointer type", infos...)
+		return false
+	}
+	if !isPointerLike(expectedVal) {
+		verificationFailure(t, "same pointer", "pointer-like type", "non-pointer type", infos...)
+		return false
+	}
+
+	if gottenVal.Pointer() != expectedVal.Pointer() {
+		verificationFailure(t, "same pointer", expectedVal.Pointer(), gottenVal.Pointer(), infos...)
+		return false
+	}
+	return true
+}
+
+// NotSamePointer checks if the gotten and expected values point to different memory addresses.
+// Both values must be pointers, slices, maps, channels, or functions.
+func NotSamePointer(t T, gotten, expected any, infos ...string) bool {
+	if ht, ok := t.(testing.TB); ok {
+		ht.Helper()
+	}
+
+	gottenVal := reflect.ValueOf(gotten)
+	expectedVal := reflect.ValueOf(expected)
+
+	// Check if both are valid pointer-like types
+	if !isPointerLike(gottenVal) {
+		verificationFailure(t, "different pointer", "pointer-like type", "non-pointer type", infos...)
+		return false
+	}
+	if !isPointerLike(expectedVal) {
+		verificationFailure(t, "different pointer", "pointer-like type", "non-pointer type", infos...)
+		return false
+	}
+
+	if gottenVal.Pointer() == expectedVal.Pointer() {
+		verificationFailure(t, "different pointer", "different addresses", "same address", infos...)
+		return false
+	}
+	return true
+}
+
+// isPointerLike checks if a value is a pointer-like type (pointer, slice, map, channel, or function).
+func isPointerLike(v reflect.Value) bool {
+	if !v.IsValid() {
+		return false
+	}
+	kind := v.Kind()
+	return kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Map ||
+		kind == reflect.Chan || kind == reflect.Func
+}
