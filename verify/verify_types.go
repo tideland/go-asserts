@@ -52,8 +52,8 @@ func Implements(t T, gotten, expected any) bool {
 	return true
 }
 
-// Assignability checks if the actual value can be assigned to the type of the
-// expected type.
+// Assignability checks if a value of `gotten`'s type is assignable to a
+// variable of `expected`'s type.
 func Assignability(t T, gotten, expected any) bool {
 	if expected == nil {
 		if ht, ok := t.(testing.TB); ok {
@@ -84,7 +84,7 @@ func Assignability(t T, gotten, expected any) bool {
 	return true
 }
 
-// Panics checks if the given functions panics.
+// Panics checks if calling the function `gotten` causes a panic.
 func Panics(t T, gotten func()) bool {
 	if gotten == nil {
 		if ht, ok := t.(testing.TB); ok {
@@ -114,7 +114,7 @@ func Panics(t T, gotten func()) bool {
 	return true
 }
 
-// NotPanics checks if the given functions does not panic.
+// NotPanics checks that calling the function `gotten` does not cause a panic.
 func NotPanics(t T, gotten func()) bool {
 	if gotten == nil {
 		if ht, ok := t.(testing.TB); ok {

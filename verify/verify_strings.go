@@ -84,7 +84,7 @@ func NotEmpty(t T, gotten any, infos ...string) bool {
 	return true
 }
 
-// Substring checks if the gotten string is a substring of the expected string.
+// Substring checks if `gotten` is a substring of `expected`.
 func Substring(t T, gotten, expected string, infos ...string) bool {
 	if !strings.Contains(expected, gotten) {
 		if ht, ok := t.(testing.TB); ok {

@@ -94,7 +94,8 @@ func Longer(t T, gotten, expected time.Duration, infos ...string) bool {
 	return true
 }
 
-// ftim is a short to format times in test output.
+// ftim formats a time.Time value into RFC3339 format for consistent
+// test output.
 func ftim(t time.Time) string {
 	return t.Format(time.RFC3339)
 }

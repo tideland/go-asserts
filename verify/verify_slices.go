@@ -15,7 +15,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-// Contains checks if the slice contains the expected element.
+// Contains checks if the `gotten` element is present in the `expected` slice.
 func Contains[S ~[]E, E comparable](t T, gotten E, expected S, infos ...string) bool {
 	if !slices.Contains(expected, gotten) {
 		if ht, ok := t.(testing.TB); ok {
@@ -39,7 +39,8 @@ func SliceEqual[S ~[]E, E comparable](t T, gotten, expected S, infos ...string) 
 	return true
 }
 
-// SliceContainsAll checks if the haystack slice contains all elements from the needles slice.
+// SliceContainsAll checks if the `haystack` slice contains all elements from
+// the `needles` slice. The order and number of occurrences do not matter.
 func SliceContainsAll[S ~[]E, E comparable](t T, haystack S, needles S, infos ...string) bool {
 	for _, needle := range needles {
 		if !slices.Contains(haystack, needle) {
@@ -79,8 +80,9 @@ func SliceSorted[S ~[]E, E constraints.Ordered](t T, gotten S, infos ...string) 
 	return true
 }
 
-// SliceSortedFunc checks if the slice is sorted according to a comparison function.
-// The comparison function should return -1 if a < b, 0 if a == b, and 1 if a > b.
+// SliceSortedFunc checks if the slice is sorted according to a comparison
+// function. The comparison function `cmp` should return a negative number
+// if `a < b`, zero if `a == b`, and a positive number if `a > b`.
 func SliceSortedFunc[S ~[]E, E any](t T, gotten S, cmp func(E, E) int, infos ...string) bool {
 	if !slices.IsSortedFunc(gotten, cmp) {
 		if ht, ok := t.(testing.TB); ok {

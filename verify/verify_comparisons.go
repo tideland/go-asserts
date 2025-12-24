@@ -112,9 +112,9 @@ func Odd[I constraints.Integer](t T, gotten I, infos ...string) bool {
 	return true
 }
 
-// About checks if the gotten values equal within a expected delta. Possible
-// values are integers, floats, and time.Duration.
-// The tolerance must be non-negative.
+// About checks if the gotten value is within a certain tolerance of the
+// expected value. The check is inclusive (`expected ± tolerance`). The
+// tolerance must be non-negative.
 func About[C constraints.Integer | constraints.Float](t T, gotten, expected, tolerance C, infos ...string) bool {
 	if tolerance < 0 {
 		if ht, ok := t.(testing.TB); ok {

@@ -13,7 +13,9 @@ import (
 	"testing"
 )
 
-// MapEqual checks if two maps are deeply equal.
+// MapEqual checks if two maps are equal using `maps.Equal`, which compares
+// keys and values with the `==` operator. For deep equality of complex
+// value types, use `DeepEqual`.
 func MapEqual[M ~map[K]V, K comparable, V comparable](t T, gotten, expected M, infos ...string) bool {
 	if !maps.Equal(gotten, expected) {
 		if ht, ok := t.(testing.TB); ok {
@@ -51,7 +53,8 @@ func MapContainsKeys[M ~map[K]V, K comparable, V any](t T, gotten M, keys []K, i
 	return true
 }
 
-// MapContainsValue checks if the map contains the specified value.
+// MapContainsValue checks if any key in the map is associated with the
+// specified value.
 func MapContainsValue[M ~map[K]V, K comparable, V comparable](t T, gotten M, value V, infos ...string) bool {
 	for _, v := range gotten {
 		if v == value {

@@ -16,14 +16,18 @@ import (
 
 // testing.T Replacement
 
-// T replaces testing.T for tests. Missing methods are handled internally.
+// T is an interface that abstracts the standard *testing.T. It allows
+// verify functions to work with both standard tests and the continued
+// testing wrapper.
 type T interface {
 	Errorf(format string, args ...any)
 }
 
-// continuedTesting is a wrapper around *testing.T that
-// indicates the test should continue running even after
-// a verification failure
+// continuedTesting is a wrapper around *testing.T that allows test
+// verifications to continue even after a failure. It collects all
+// failure messages and logs them without immediately calling t.FailNow().
+// The total number of failures can be asserted at the end of the test
+// using FailureCount.
 type continuedTesting struct {
 	*testing.T
 	mu     sync.Mutex
@@ -52,8 +56,9 @@ func (ct *continuedTesting) Errorf(format string, args ...any) {
 
 // Library API
 
-// ContinuedTesting creates a new T instance that continues after
-// testing failures.
+// ContinuedTesting wraps a *testing.T to create a T instance that allows
+// verifications to continue after failures. This is useful for checking
+// multiple independent conditions and reporting all failures at once.
 func ContinuedTesting(t *testing.T) T {
 	ct := &continuedTesting{
 		T:      t,
@@ -64,14 +69,17 @@ func ContinuedTesting(t *testing.T) T {
 	return ct
 }
 
-// IsContinued checks if a testing.T is a continueTesting type.
+// IsContinued checks if a T is a *continuedTesting instance. This can be
+// useful for conditional logic in tests.
 func IsContinued(t T) bool {
 	_, ok := t.(*continuedTesting)
 	return ok
 }
 
-// FailureCount validates how many tests failed during continued
-// test to verify the expected number.
+// FailureCount asserts that the number of failures recorded by a
+// *continuedTesting instance matches the expected count. It fails
+// the test if the counts do not match. This must be called at the
+// end of a test using ContinuedTesting.
 func FailureCount(t T, expected int) bool {
 	var ct *continuedTesting
 	var ok bool

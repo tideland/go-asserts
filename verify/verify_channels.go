@@ -12,9 +12,8 @@ import (
 	"time"
 )
 
-// ChannelClosed checks if the given channel is closed.
-// It attempts to receive from the channel with a zero timeout.
-// If the channel is closed, the receive will succeed immediately with the zero value and ok=false.
+// ChannelClosed checks if a channel is closed. It performs the check
+// without blocking.
 func ChannelClosed(t T, gotten <-chan any, infos ...string) bool {
 	if ht, ok := t.(testing.TB); ok {
 		ht.Helper()
@@ -42,8 +41,9 @@ func ChannelClosed(t T, gotten <-chan any, infos ...string) bool {
 	}
 }
 
-// ChannelReceives checks if the given channel receives a value within the timeout.
-// Returns true if a value is received, false if timeout occurs or channel is closed.
+// ChannelReceives checks if a value is received on a channel within a
+// given timeout. It fails if the timeout is exceeded or the channel is
+// closed before a value is received.
 func ChannelReceives[E any](t T, gotten <-chan E, timeout time.Duration, infos ...string) bool {
 	if ht, ok := t.(testing.TB); ok {
 		ht.Helper()
@@ -67,7 +67,9 @@ func ChannelReceives[E any](t T, gotten <-chan E, timeout time.Duration, infos .
 	}
 }
 
-// ChannelReceivesValue checks if the given channel receives the expected value within the timeout.
+// ChannelReceivesValue checks if a specific expected value is received on a
+// channel within a given timeout. It fails if the timeout is exceeded, the
+// channel is closed, or a different value is received.
 func ChannelReceivesValue[E comparable](t T, gotten <-chan E, expected E, timeout time.Duration, infos ...string) bool {
 	if ht, ok := t.(testing.TB); ok {
 		ht.Helper()

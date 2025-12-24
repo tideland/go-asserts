@@ -39,8 +39,8 @@ func NoError(t T, gotten error) bool {
 	return true
 }
 
-// IsError checks if the given error is not nil and of the expected type.
-// It uses the errors.Is() function.
+// IsError checks if the gotten error is equivalent to the expected error
+// using `errors.Is`. This is useful for checking for sentinel errors.
 func IsError(t T, gotten, expected error) bool {
 	if !errors.Is(gotten, expected) {
 		if ht, ok := t.(testing.TB); ok {
@@ -52,9 +52,9 @@ func IsError(t T, gotten, expected error) bool {
 	return true
 }
 
-// AsError checks if the given error can be unwrapped to the expected error type.
-// It uses the errors.As() function. The expected parameter should be a pointer
-// to the error type you want to check for.
+// AsError checks if the gotten error can be unwrapped to a specific error
+// type using `errors.As`. The `expected` parameter must be a pointer to a
+// variable of the target error type (e.g., `var perr *os.PathError`).
 func AsError(t T, gotten error, expected any) bool {
 	if gotten == nil {
 		if ht, ok := t.(testing.TB); ok {
@@ -73,8 +73,8 @@ func AsError(t T, gotten error, expected any) bool {
 	return true
 }
 
-// UnwrapError checks if the given error unwraps to the expected error.
-// It uses the errors.Unwrap() function.
+// UnwrapError checks if unwrapping `gotten` error once results in an
+// error that is equivalent to `expected` using `errors.Is`.
 func UnwrapError(t T, gotten, expected error) bool {
 	if gotten == nil {
 		if ht, ok := t.(testing.TB); ok {

@@ -12,8 +12,8 @@ import (
 	"testing"
 )
 
-// All checks if all elements in the slice satisfy the predicate function.
-// Returns true if all elements pass the predicate, false otherwise.
+// All checks if every element in a slice satisfies the provided predicate
+// function. It passes for an empty slice.
 func All[S ~[]E, E any](t T, gotten S, predicate func(E) bool, infos ...string) bool {
 	if ht, ok := t.(testing.TB); ok {
 		ht.Helper()
@@ -34,8 +34,8 @@ func All[S ~[]E, E any](t T, gotten S, predicate func(E) bool, infos ...string) 
 	return true
 }
 
-// Any checks if at least one element in the slice satisfies the predicate function.
-// Returns true if any element passes the predicate, false if none do.
+// Any checks if at least one element in a slice satisfies the provided
+// predicate function. It fails for an empty slice.
 func Any[S ~[]E, E any](t T, gotten S, predicate func(E) bool, infos ...string) bool {
 	if ht, ok := t.(testing.TB); ok {
 		ht.Helper()
@@ -56,8 +56,8 @@ func Any[S ~[]E, E any](t T, gotten S, predicate func(E) bool, infos ...string) 
 	return false
 }
 
-// None checks if no elements in the slice satisfy the predicate function.
-// Returns true if no elements pass the predicate, false if any do.
+// None checks if no element in a slice satisfies the provided predicate
+// function. It passes for an empty slice.
 func None[S ~[]E, E any](t T, gotten S, predicate func(E) bool, infos ...string) bool {
 	if ht, ok := t.(testing.TB); ok {
 		ht.Helper()
