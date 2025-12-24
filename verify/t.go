@@ -10,6 +10,7 @@ package verify
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -25,6 +26,7 @@ type T interface {
 // a verification failure
 type continuedTesting struct {
 	*testing.T
+	mu     sync.Mutex
 	failed int
 	msgs   []string
 }
@@ -35,14 +37,17 @@ var _ T = (*continuedTesting)(nil)
 func (ct *continuedTesting) Errorf(format string, args ...any) {
 	ct.Helper()
 
+	ct.mu.Lock()
 	ct.failed++
-
 	ct.msgs = append(ct.msgs, fmt.Sprintf(format, args...))
+	msgs := make([]string, len(ct.msgs))
+	copy(msgs, ct.msgs)
+	ct.msgs = nil
+	ct.mu.Unlock()
 
-	for _, msg := range ct.msgs {
+	for _, msg := range msgs {
 		ct.T.Log(msg)
 	}
-	ct.msgs = nil
 }
 
 // Library API
@@ -50,7 +55,12 @@ func (ct *continuedTesting) Errorf(format string, args ...any) {
 // ContinuedTesting creates a new T instance that continues after
 // testing failures.
 func ContinuedTesting(t *testing.T) T {
-	ct := &continuedTesting{t, 0, nil}
+	ct := &continuedTesting{
+		T:      t,
+		mu:     sync.Mutex{},
+		failed: 0,
+		msgs:   nil,
+	}
 	return ct
 }
 
@@ -71,10 +81,14 @@ func FailureCount(t T, expected int) bool {
 		return false
 	}
 
-	if ct.failed != expected {
-		failed := ct.failed
+	ct.mu.Lock()
+	failed := ct.failed
+	ct.mu.Unlock()
+
+	if failed != expected {
 		verificationFailure(t, "failure count", expected, failed)
 		ct.T.Fail()
+		return false
 	}
 	return true
 }
@@ -101,4 +115,3 @@ func verificationFailure(t T, verification string, expected, got any, infos ...s
 	}
 	t.Errorf("%s", msg)
 }
-

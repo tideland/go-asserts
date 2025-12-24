@@ -40,7 +40,7 @@ func False(t T, gotten bool, infos ...string) bool {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
-		verificationFailure(t, "is false", false, gotten)
+		verificationFailure(t, "is false", false, gotten, infos...)
 		return false
 	}
 	return true
@@ -307,7 +307,7 @@ func Between(t T, gotten, expectedBegin, expectedEnd time.Time, infos ...string)
 
 // Shorter checks if the gotten duration is shorter than the expected duration.
 func Shorter(t T, gotten, expected time.Duration, infos ...string) bool {
-	if gotten > expected {
+	if gotten >= expected {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
@@ -319,7 +319,7 @@ func Shorter(t T, gotten, expected time.Duration, infos ...string) bool {
 
 // Longer checks if the gotten duration is longer than the expected duration.
 func Longer(t T, gotten, expected time.Duration, infos ...string) bool {
-	if gotten < expected {
+	if gotten <= expected {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
 		}
@@ -566,16 +566,23 @@ func Panics(t T, gotten func()) bool {
 		return false
 	}
 
+	if ht, ok := t.(testing.TB); ok {
+		ht.Helper()
+	}
+
+	panicked := false
 	defer func() {
-		if r := recover(); r == nil {
-			if ht, ok := t.(testing.TB); ok {
-				ht.Helper()
-			}
-			verificationFailure(t, "panics", "expected function", "actual function")
+		if r := recover(); r != nil {
+			panicked = true
 		}
 	}()
 
 	gotten()
+
+	if !panicked {
+		verificationFailure(t, "panics", "function to panic", "function did not panic")
+		return false
+	}
 	return true
 }
 
@@ -589,16 +596,23 @@ func NotPanics(t T, gotten func()) bool {
 		return false
 	}
 
+	if ht, ok := t.(testing.TB); ok {
+		ht.Helper()
+	}
+
+	panicked := false
 	defer func() {
 		if r := recover(); r != nil {
-			if ht, ok := t.(testing.TB); ok {
-				ht.Helper()
-			}
-			verificationFailure(t, "not panics", "expected function", "actual function")
+			panicked = true
 		}
 	}()
 
 	gotten()
+
+	if panicked {
+		verificationFailure(t, "not panics", "function not to panic", "function panicked")
+		return false
+	}
 	return true
 }
 
@@ -637,4 +651,3 @@ func flexlen(in any) int {
 		}
 	}
 }
-
