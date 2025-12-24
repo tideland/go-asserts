@@ -604,16 +604,13 @@ func NotPanics(t T, gotten func()) bool {
 	defer func() {
 		if r := recover(); r != nil {
 			panicked = true
+			verificationFailure(t, "not panics", "function not to panic", "function panicked")
 		}
 	}()
 
 	gotten()
 
-	if panicked {
-		verificationFailure(t, "not panics", "function not to panic", "function panicked")
-		return false
-	}
-	return true
+	return !panicked
 }
 
 // Helper

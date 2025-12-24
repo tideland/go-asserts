@@ -8,8 +8,10 @@
 package verify_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,6 +32,65 @@ func TestVerify(t *testing.T) {
 	verify.False(ct, true)
 
 	verify.FailureCount(ct, 2)
+}
+
+// TestImplements tests the Implements verification function.
+func TestImplements(t *testing.T) {
+	// Define test interface as nil value of interface type
+	var stringer fmt.Stringer
+
+	// Positive: type that implements interface
+	var buf bytes.Buffer
+	verify.Implements(t, &buf, &stringer)
+
+	// Another type that implements Stringer (time.Time implements Stringer)
+	now := time.Now()
+	verify.Implements(t, now, &stringer)
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: type that doesn't implement interface
+	verify.Implements(ct, 42, &stringer)
+	verify.Implements(ct, "string", &stringer)
+
+	// Negative: nil expected (not an interface)
+	verify.Implements(ct, &buf, nil)
+
+	// Negative: nil gotten
+	verify.Implements(ct, nil, &stringer)
+
+	// Negative: expected is not interface type pointer
+	var notInterface int
+	verify.Implements(ct, &buf, &notInterface)
+
+	verify.FailureCount(ct, 5)
+}
+
+// TestErrorContains tests the ErrorContains verification function.
+func TestErrorContains(t *testing.T) {
+	testErr := errors.New("database connection failed: timeout after 30s")
+
+	// Positive: error contains substring
+	verify.ErrorContains(t, testErr, "database")
+	verify.ErrorContains(t, testErr, "connection")
+	verify.ErrorContains(t, testErr, "timeout")
+	verify.ErrorContains(t, testErr, "30s")
+	verify.ErrorContains(t, testErr, "database connection failed: timeout after 30s") // full match
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: nil error
+	verify.ErrorContains(ct, nil, "anything")
+	verify.ErrorContains(ct, nil, "database")
+
+	// Negative: substring not in error
+	verify.ErrorContains(ct, testErr, "network")
+	verify.ErrorContains(ct, testErr, "SUCCESS")
+	verify.ErrorContains(ct, testErr, "redis")
+
+	verify.FailureCount(ct, 5)
 }
 
 // TestBoolean tests the True and False verification functions.
@@ -413,3 +474,66 @@ func TestIsContinue(t *testing.T) {
 	verify.FailureCount(ct, 0)
 }
 
+// TestPanics tests the Panics verification function.
+func TestPanics(t *testing.T) {
+	// Positive: function that panics
+	verify.Panics(t, func() { panic("test panic") })
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: function that doesn't panic
+	verify.Panics(ct, func() {
+		// do nothing - no panic
+	})
+
+	// Negative: nil function
+	verify.Panics(ct, nil)
+
+	verify.FailureCount(ct, 2)
+}
+
+// TestNotPanics tests the NotPanics verification function.
+func TestNotPanics(t *testing.T) {
+	// Positive: function that doesn't panic
+	verify.NotPanics(t, func() {
+		// safe code
+		_ = 1 + 1
+	})
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: function that panics
+	verify.NotPanics(ct, func() {
+		panic("boom")
+	})
+
+	// Negative: nil function
+	verify.NotPanics(ct, nil)
+
+	verify.FailureCount(ct, 2)
+}
+
+// TestConcurrentContinuedTesting tests thread-safety of continuedTesting.
+func TestConcurrentContinuedTesting(t *testing.T) {
+	ct := verify.ContinuedTesting(t)
+
+	// Run multiple goroutines using same continued testing instance
+	var wg sync.WaitGroup
+	numGoroutines := 10
+
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			// Intentional failure - each goroutine adds one failure
+			verify.Equal(ct, n, n+1)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// All 10 failures should be counted correctly (tests thread safety)
+	verify.FailureCount(ct, numGoroutines)
+}
