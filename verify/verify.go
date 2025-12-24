@@ -194,7 +194,15 @@ func More[C constraints.Integer | constraints.Float](t T, gotten, expected C, in
 
 // About checks if the gotten values equal within a expected delta. Possible
 // values are integers, floats, and time.Duration.
+// The tolerance must be non-negative.
 func About[C constraints.Integer | constraints.Float](t T, gotten, expected, tolerance C, infos ...string) bool {
+	if tolerance < 0 {
+		if ht, ok := t.(testing.TB); ok {
+			ht.Helper()
+		}
+		verificationFailure(t, "is about equal", "tolerance >= 0", tolerance, infos...)
+		return false
+	}
 	if gotten < expected-tolerance || gotten > expected+tolerance {
 		if ht, ok := t.(testing.TB); ok {
 			ht.Helper()
@@ -287,6 +295,8 @@ func After(t T, gotten, expected time.Time, infos ...string) bool {
 }
 
 // Between checks if the gotten time is between the expected start and end times.
+// The boundaries are inclusive (gotten can equal expectedBegin or expectedEnd).
+// If expectedBegin is after expectedEnd, they will be automatically swapped.
 func Between(t T, gotten, expectedBegin, expectedEnd time.Time, infos ...string) bool {
 	expstr := ""
 	if expectedBegin.After(expectedEnd) {
@@ -329,8 +339,10 @@ func Longer(t T, gotten, expected time.Duration, infos ...string) bool {
 	return true
 }
 
-// InRange checks if the given value is within lower and upper bounds. Possible
-// values are integers, floats, and time.Duration.
+// InRange checks if the given value is within lower and upper bounds.
+// The boundaries are inclusive (gotten can equal expectedLower or expectedUpper).
+// If expectedLower is greater than expectedUpper, they will be automatically swapped.
+// Possible values are integers, floats, and time.Duration.
 func InRange[C constraints.Integer | constraints.Float](t T, gotten, expectedLower, expectedUpper C, infos ...string) bool {
 	if expectedLower > expectedUpper {
 		expectedLower, expectedUpper = expectedUpper, expectedLower
@@ -346,8 +358,10 @@ func InRange[C constraints.Integer | constraints.Float](t T, gotten, expectedLow
 	return true
 }
 
-// OutOfRange checks if the given value is outside lower and upper bounds. It's the
-// opposite of InRange.
+// OutOfRange checks if the given value is outside lower and upper bounds.
+// It's the opposite of InRange. The boundaries are exclusive (gotten cannot equal
+// expectedLower or expectedUpper to be considered out of range).
+// If expectedLower is greater than expectedUpper, they will be automatically swapped.
 func OutOfRange[C constraints.Integer | constraints.Float](t T, gotten, expectedLower, expectedUpper C, infos ...string) bool {
 	if expectedLower > expectedUpper {
 		expectedLower, expectedUpper = expectedUpper, expectedLower

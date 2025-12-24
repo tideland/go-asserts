@@ -537,3 +537,91 @@ func TestConcurrentContinuedTesting(t *testing.T) {
 	// All 10 failures should be counted correctly (tests thread safety)
 	verify.FailureCount(ct, numGoroutines)
 }
+
+// TestBetweenBoundaries tests the Between function with boundary conditions.
+func TestBetweenBoundaries(t *testing.T) {
+	now := time.Now()
+	earlier := now.Add(-1 * time.Hour)
+	later := now.Add(1 * time.Hour)
+
+	// Positive: exact boundary matches should pass (inclusive)
+	verify.Between(t, earlier, earlier, later)
+	verify.Between(t, later, earlier, later)
+	verify.Between(t, now, earlier, later)
+
+	// Positive: boundaries auto-swap if reversed
+	verify.Between(t, now, later, earlier)
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: outside the range
+	verify.Between(ct, earlier.Add(-1*time.Second), earlier, later)
+	verify.Between(ct, later.Add(1*time.Second), earlier, later)
+
+	verify.FailureCount(ct, 2)
+}
+
+// TestInRangeBoundaries tests InRange and OutOfRange with boundary conditions.
+func TestInRangeBoundaries(t *testing.T) {
+	// Positive: exact boundary matches should pass (inclusive)
+	verify.InRange(t, 30, 30, 50)
+	verify.InRange(t, 50, 30, 50)
+	verify.InRange(t, 40, 30, 50)
+
+	verify.InRange(t, 3.0, 3.0, 5.0)
+	verify.InRange(t, 5.0, 3.0, 5.0)
+
+	verify.InRange(t, 3*time.Second, 3*time.Second, 5*time.Second)
+	verify.InRange(t, 5*time.Second, 3*time.Second, 5*time.Second)
+
+	// Positive: boundaries auto-swap if reversed
+	verify.InRange(t, 40, 50, 30)
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: outside range
+	verify.InRange(ct, 29, 30, 50)
+	verify.InRange(ct, 51, 30, 50)
+
+	verify.FailureCount(ct, 2)
+}
+
+// TestOutOfRangeBoundaries tests OutOfRange with boundary conditions.
+func TestOutOfRangeBoundaries(t *testing.T) {
+	// Positive: outside the range
+	verify.OutOfRange(t, 29, 30, 50)
+	verify.OutOfRange(t, 51, 30, 50)
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: exact boundary matches should fail (boundaries are exclusive for OutOfRange)
+	verify.OutOfRange(ct, 30, 30, 50)
+	verify.OutOfRange(ct, 50, 30, 50)
+	verify.OutOfRange(ct, 40, 30, 50)
+
+	verify.FailureCount(ct, 3)
+}
+
+// TestAboutTolerance tests About function with tolerance validation.
+func TestAboutTolerance(t *testing.T) {
+	// Positive: valid tolerance
+	verify.About(t, 45, 43, 5)
+	verify.About(t, 4.5, 4.3, 0.3)
+	verify.About(t, 5*time.Second, 4*time.Second, 2*time.Second)
+
+	// Positive: zero tolerance
+	verify.About(t, 10, 10, 0)
+
+	// Create continuation testing for negative cases
+	ct := verify.ContinuedTesting(t)
+
+	// Negative: negative tolerance should fail
+	verify.About(ct, 45, 43, -5)
+	verify.About(ct, 4.5, 4.3, -0.3)
+	verify.About(ct, 5*time.Second, 4*time.Second, -2*time.Second)
+
+	verify.FailureCount(ct, 3)
+}
