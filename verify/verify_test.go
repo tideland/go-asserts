@@ -332,9 +332,7 @@ func (e customError) Error() string {
 	return e.msg
 }
 
-type anotherError struct {
-	code int
-}
+type anotherError struct{}
 
 func (e anotherError) Error() string {
 	return "another error"

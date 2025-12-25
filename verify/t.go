@@ -50,7 +50,7 @@ func (ct *continuedTesting) Errorf(format string, args ...any) {
 	ct.mu.Unlock()
 
 	for _, msg := range msgs {
-		ct.T.Log(msg)
+		ct.Log(msg)
 	}
 }
 
@@ -95,7 +95,7 @@ func FailureCount(t T, expected int) bool {
 
 	if failed != expected {
 		verificationFailure(t, "failure count", expected, failed)
-		ct.T.Fail()
+		ct.Fail()
 		return false
 	}
 	return true
