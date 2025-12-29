@@ -10,7 +10,6 @@ package capture
 import (
 	"bytes"
 	"io"
-	"log"
 	"os"
 )
 
@@ -22,9 +21,7 @@ type Captured struct {
 
 // Bytes returns the captured content as bytes.
 func (c Captured) Bytes() []byte {
-	buf := make([]byte, c.Len())
-	copy(buf, c.buffer)
-	return buf
+	return c.buffer
 }
 
 // String implements fmt.Stringer.
@@ -39,54 +36,69 @@ func (c Captured) Len() int {
 
 // Stdout allows to capture Stdout by the given function.
 // The result is stored in Captured and can be retrieved as
-// []byte or string for aseertions.
+// []byte or string for assertions.
 func Stdout(f func()) Captured {
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		panic("failed to create pipe: " + err.Error())
+	}
+
 	os.Stdout = w
-
-	f()
-
 	outC := make(chan []byte)
 
+	// Start goroutine to read from pipe
 	go func() {
 		var buf bytes.Buffer
-		if _, err := io.Copy(&buf, r); err != nil {
-			log.Fatalf("error capturing stdout: %v", err)
-		}
+		_, _ = io.Copy(&buf, r)
 		outC <- buf.Bytes()
 	}()
 
-	w.Close()
-	os.Stdout = old
+	// Ensure restoration even if f() panics
+	defer func() {
+		os.Stdout = old
+	}()
+
+	f()
+	if err := w.Close(); err != nil {
+		panic("failed to close pipe: " + err.Error())
+	}
+
 	return Captured{
 		buffer: <-outC,
 	}
 }
 
-// CaptureStdout allows to capture Stderr by the given function.
-
+// Stderr allows to capture Stderr by the given function.
 // The result is stored in Captured and can be retrieved as
-// []byte or string for aseertions.
+// []byte or string for assertions.
 func Stderr(f func()) Captured {
 	old := os.Stderr
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		panic("failed to create pipe: " + err.Error())
+	}
+
 	os.Stderr = w
-
-	f()
-
 	outC := make(chan []byte)
 
+	// Start goroutine to read from pipe
 	go func() {
 		var buf bytes.Buffer
-		if _, err := io.Copy(&buf, r); err != nil {
-			log.Fatalf("error capturing stderr: %v", err)
-		}
+		_, _ = io.Copy(&buf, r)
 		outC <- buf.Bytes()
 	}()
 
-	w.Close()
-	os.Stderr = old
+	// Ensure restoration even if f() panics
+	defer func() {
+		os.Stderr = old
+	}()
+
+	f()
+	if err := w.Close(); err != nil {
+		panic("failed to close pipe: " + err.Error())
+	}
+
 	return Captured{
 		buffer: <-outC,
 	}
@@ -94,7 +106,7 @@ func Stderr(f func()) Captured {
 
 // Both allows to capture Stdout and Stderr by the given
 // function. The result is stored in two Captureds for each and can
-// be retrieved as []byte or string for aseertions.
+// be retrieved as []byte or string for assertions.
 func Both(f func()) (Captured, Captured) {
 	var cerr Captured
 	ff := func() {
@@ -103,4 +115,3 @@ func Both(f func()) (Captured, Captured) {
 	cout := Stdout(ff)
 	return cout, cerr
 }
-
