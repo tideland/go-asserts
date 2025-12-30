@@ -35,8 +35,8 @@ jobs:
             exit 1
           fi
 
-          # Convert to JSON array for matrix.
-          json="$(printf '%s\n' "${mods[@]}" | jq -R . | jq -s .)"
+          # Convert to JSON array for matrix (compact format for GitHub Actions).
+          json="$(printf '%s\n' "${mods[@]}" | jq -R . | jq -sc .)"
           echo "modules=$json" >> "$GITHUB_OUTPUT"
           echo "Discovered modules: $json"
 
