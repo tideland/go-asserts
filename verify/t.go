@@ -10,21 +10,27 @@ package verify
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 )
 
 // testing.T Replacement
 
-// T replaces testing.T for tests. Missing methods are handled internally.
+// T is an interface that abstracts the standard *testing.T. It allows
+// verify functions to work with both standard tests and the continued
+// testing wrapper.
 type T interface {
 	Errorf(format string, args ...any)
 }
 
-// continuedTesting is a wrapper around *testing.T that
-// indicates the test should continue running even after
-// a verification failure
+// continuedTesting is a wrapper around *testing.T that allows test
+// verifications to continue even after a failure. It collects all
+// failure messages and logs them without immediately calling t.FailNow().
+// The total number of failures can be asserted at the end of the test
+// using FailureCount.
 type continuedTesting struct {
 	*testing.T
+	mu     sync.Mutex
 	failed int
 	msgs   []string
 }
@@ -35,33 +41,45 @@ var _ T = (*continuedTesting)(nil)
 func (ct *continuedTesting) Errorf(format string, args ...any) {
 	ct.Helper()
 
+	ct.mu.Lock()
 	ct.failed++
-
 	ct.msgs = append(ct.msgs, fmt.Sprintf(format, args...))
-
-	for _, msg := range ct.msgs {
-		ct.T.Log(msg)
-	}
+	msgs := make([]string, len(ct.msgs))
+	copy(msgs, ct.msgs)
 	ct.msgs = nil
+	ct.mu.Unlock()
+
+	for _, msg := range msgs {
+		ct.Log(msg)
+	}
 }
 
 // Library API
 
-// ContinuedTesting creates a new T instance that continues after
-// testing failures.
+// ContinuedTesting wraps a *testing.T to create a T instance that allows
+// verifications to continue after failures. This is useful for checking
+// multiple independent conditions and reporting all failures at once.
 func ContinuedTesting(t *testing.T) T {
-	ct := &continuedTesting{t, 0, nil}
+	ct := &continuedTesting{
+		T:      t,
+		mu:     sync.Mutex{},
+		failed: 0,
+		msgs:   nil,
+	}
 	return ct
 }
 
-// IsContinued checks if a testing.T is a continueTesting type.
+// IsContinued checks if a T is a *continuedTesting instance. This can be
+// useful for conditional logic in tests.
 func IsContinued(t T) bool {
 	_, ok := t.(*continuedTesting)
 	return ok
 }
 
-// FailureCount validates how many tests failed during continued
-// test to verify the expected number.
+// FailureCount asserts that the number of failures recorded by a
+// *continuedTesting instance matches the expected count. It fails
+// the test if the counts do not match. This must be called at the
+// end of a test using ContinuedTesting.
 func FailureCount(t T, expected int) bool {
 	var ct *continuedTesting
 	var ok bool
@@ -71,10 +89,14 @@ func FailureCount(t T, expected int) bool {
 		return false
 	}
 
-	if ct.failed != expected {
-		failed := ct.failed
+	ct.mu.Lock()
+	failed := ct.failed
+	ct.mu.Unlock()
+
+	if failed != expected {
 		verificationFailure(t, "failure count", expected, failed)
-		ct.T.Fail()
+		ct.Fail()
+		return false
 	}
 	return true
 }
@@ -101,4 +123,3 @@ func verificationFailure(t T, verification string, expected, got any, infos ...s
 	}
 	t.Errorf("%s", msg)
 }
-

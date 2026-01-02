@@ -44,8 +44,10 @@ func TestBoth(t *testing.T) {
 	hello := "Hello, World!"
 	ouch := "ouch"
 	cout, cerr := capture.Both(func() {
-		fmt.Fprint(os.Stdout, hello)
-		fmt.Fprint(os.Stderr, ouch)
+		_, err := fmt.Fprint(os.Stdout, hello)
+		verify.NoError(t, err)
+		_, err = fmt.Fprint(os.Stderr, ouch)
+		verify.NoError(t, err)
 	})
 	verify.Equal(t, hello, cout.String())
 	verify.Equal(t, len(hello), cout.Len())
@@ -58,8 +60,10 @@ func TestBytes(t *testing.T) {
 	foo := "foo"
 	boo := []byte(foo)
 	cout, cerr := capture.Both(func() {
-		fmt.Fprint(os.Stdout, foo)
-		fmt.Fprint(os.Stderr, foo)
+		_, err := fmt.Fprint(os.Stdout, foo)
+		verify.NoError(t, err)
+		_, err = fmt.Fprint(os.Stderr, foo)
+		verify.NoError(t, err)
 	})
 	verify.True(t, bytes.Equal(cout.Bytes(), boo))
 	verify.True(t, bytes.Equal(cerr.Bytes(), boo))
@@ -72,8 +76,12 @@ func TestRestore(t *testing.T) {
 	oldOut := os.Stdout
 	oldErr := os.Stderr
 	cout, cerr := capture.Both(func() {
-		fmt.Fprint(os.Stdout, foo)
-		fmt.Fprint(os.Stderr, foo)
+		if _, err := fmt.Fprint(os.Stdout, foo); err != nil {
+			panic("failed to write to stdout: " + err.Error())
+		}
+		if _, err := fmt.Fprint(os.Stderr, foo); err != nil {
+			panic("failed to write to stderr: " + err.Error())
+		}
 	})
 	verify.Equal(t, foo, cout.String())
 	verify.Equal(t, len(foo), cout.Len())
@@ -82,4 +90,3 @@ func TestRestore(t *testing.T) {
 	verify.Equal(t, oldOut, os.Stdout)
 	verify.Equal(t, oldErr, os.Stderr)
 }
-

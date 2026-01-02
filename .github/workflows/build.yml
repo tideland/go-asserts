@@ -1,0 +1,98 @@
+# .github/workflows/build.yml
+name: build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # Discover all Go modules (monorepo with multiple go.mod) OR just one (repo root).
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.mods.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: mods
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Find all directories containing go.mod (excluding vendor and hidden dirs).
+          mapfile -t mods < <(find . -name go.mod -not -path "*/vendor/*" -not -path "*/.*/*" -print0 \
+            | xargs -0 -n1 dirname \
+            | sed 's|^\./||' \
+            | sort -u)
+
+          # If no go.mod found (rare), fail early.
+          if [ "${#mods[@]}" -eq 0 ]; then
+            echo "No go.mod found."
+            exit 1
+          fi
+
+          # Convert to JSON array for matrix (compact format for GitHub Actions).
+          json="$(printf '%s\n' "${mods[@]}" | jq -R . | jq -sc .)"
+          echo "modules=$json" >> "$GITHUB_OUTPUT"
+          echo "Discovered modules: $json"
+
+  lint:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache: true
+          cache-dependency-path: |
+            ${{ matrix.module }}/go.sum
+
+      # Uses .golangci.yml if present at repo root (recommended).
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: ${{ matrix.module }}
+          args: --timeout=5m
+
+  test:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache: true
+          cache-dependency-path: |
+            ${{ matrix.module }}/go.sum
+
+      - name: Build
+        working-directory: ${{ matrix.module }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          go build ./...
+
+      - name: Test
+        working-directory: ${{ matrix.module }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test -race -count=1 ./...
